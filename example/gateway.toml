@@ -1,0 +1,4 @@
+# Configure the properties of the gateway service
+
+# Which port on the machine to host the gateway
+Port = 8080

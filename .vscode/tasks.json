@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Launch gateway",
+            "type": "shell",
+            "command": "go",
+            "options": {
+                "cwd": "${workspaceFolder}/gomods/gateway/"
+            },
+            "args": [
+                "run",
+                "*.go",
+                "${workspaceFolder}/example/coordinators.toml",
+                "${workspaceFolder}/example/gateway.toml"
+            ]
+        },
+        {
+            "label": "Launch coordinator (master)",
+            "type": "shell",
+            "command": "go",
+            "options": {
+                "cwd": "${workspaceFolder}/gomods/coordinator/"
+            },
+            "args": [
+                "run",
+                "*.go",
+                "${workspaceFolder}/example/coordinator_master.toml",
+            ]
+        }
+    ]
+}

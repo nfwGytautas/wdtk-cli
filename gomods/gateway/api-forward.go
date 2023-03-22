@@ -1,4 +1,4 @@
-package gateway
+package main
 
 import (
 	"fmt"
@@ -8,10 +8,11 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
 
 /*
- Function for generating a proxy forward for a url
+Function for generating a proxy forward for a url
 */
 func apiForward(target string) (gin.HandlerFunc, error) {
 	url, err := url.Parse(target)
@@ -35,17 +36,18 @@ func apiForward(target string) (gin.HandlerFunc, error) {
 }
 
 /*
- Function sets up forwarding points for a given service
- */
-func setupForwarding(r* gin.Engine, s* service) error {
+Function sets up forwarding points for a given service
+*/
+func setupForwarding(r *gin.Engine, s coordinator.Service) error {
 	log.Printf("Setting up %s", s.Name)
 
-	for name, _ := range s.Endpoints {
-		log.Printf("Routing endpoint %s", name)
-
+	log.Println(s.Name)
+	for _, endpoint := range s.Endpoints {
 		// Routing
-		inUrl := fmt.Sprintf("/%s/%s", s.Name, name)
-		outUrl := fmt.Sprintf("http://localhost:8080/rerouted/%s", name)
+		inUrl := fmt.Sprintf("/%s/%s", s.Name, endpoint.Name)
+		outUrl := fmt.Sprintf("%s%s", s.URL, endpoint.Name)
+
+		log.Printf("\t%s -> %s", inUrl, outUrl)
 
 		// Create proxy handler
 		handler, err := apiForward(outUrl)
@@ -54,6 +56,7 @@ func setupForwarding(r* gin.Engine, s* service) error {
 		}
 
 		// TODO: Other handles
+		log.Println(inUrl)
 		r.GET(inUrl, handler)
 	}
 
