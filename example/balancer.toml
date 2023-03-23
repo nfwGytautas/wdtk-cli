@@ -1,0 +1,7 @@
+# Describe a load balancer
+
+# The service we are balancing
+Service = "TestService1"
+
+# The frequency shard states are queried in milliseconds
+ShardUpdate = 1000

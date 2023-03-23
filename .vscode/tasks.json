@@ -27,6 +27,20 @@
                 "*.go",
                 "${workspaceFolder}/example/coordinator_master.toml",
             ]
+        },
+        {
+            "label": "Run balancer (OneToOne)",
+            "type": "shell",
+            "command": "go",
+            "options": {
+                "cwd": "${workspaceFolder}/gomods/balancers/OneToOne/"
+            },
+            "args": [
+                "run",
+                "*.go",
+                "${workspaceFolder}/example/coordinators.toml",
+                "${workspaceFolder}/example/balancer.toml",
+            ]
         }
     ]
 }

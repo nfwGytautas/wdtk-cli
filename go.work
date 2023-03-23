@@ -1,5 +1,11 @@
 go 1.20
 
+// Base
 use ./gomods/gateway
 use ./gomods/coordinator
 use ./gomods/coordinator-api
+use ./gomods/balancer-api
+use ./gomods/common
+
+// Balancers
+use ./gomods/balancers/OneToOne

@@ -6,7 +6,24 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/nfwGytautas/mstk/gomods/common"
 )
+
+/*
+Struct for holding a single coordinator config
+*/
+type coordinator struct {
+	Host string
+}
+
+/*
+Struct for holding coordinator config
+*/
+var config struct {
+	Master coordinator
+	Backup coordinator
+}
 
 /*
 Struct for keeping track of the coordinator state
@@ -19,9 +36,9 @@ var cState struct {
 /*
 Setup the coordinator API package
 */
-func Setup() {
+func Setup(configFile string) {
 	// Setup config
-	err := readConfig()
+	err := common.StoreTOMLConfig(configFile, &config)
 	if err != nil {
 		log.Panic(err)
 	}
