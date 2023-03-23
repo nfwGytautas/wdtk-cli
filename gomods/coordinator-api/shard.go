@@ -5,20 +5,14 @@ import (
 	"io"
 	"log"
 	"net/http"
-)
 
-/*
-Struct for keeping information about a shard
-*/
-type Shard struct {
-	Name string `json:"Name"`
-	URL  string `json:"URL"`
-}
+	"github.com/nfwGytautas/mstk/gomods/common"
+)
 
 /*
 Send a request to a coordinator requesting for a list of shards assigned to the service
 */
-func GetShards(service string) []Shard {
+func GetShards(service string) []common.Shard {
 	req, err := createCoordinatorRequest(http.MethodGet, "/shards/")
 	if err != nil {
 		log.Println(err)
@@ -42,7 +36,7 @@ func GetShards(service string) []Shard {
 		return nil
 	}
 
-	var result []Shard
+	var result []common.Shard
 	err = json.Unmarshal(resBody, &result)
 	if err != nil {
 		log.Println(err)

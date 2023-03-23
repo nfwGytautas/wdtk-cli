@@ -22,3 +22,6 @@ The common API for MSTK balancers.
 
 ### ```common```
 Common functions used by packages
+
+### ```microservice-api```
+Functions used for creating a microservice, end users will use this library the most

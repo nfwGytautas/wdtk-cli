@@ -29,7 +29,7 @@
             ]
         },
         {
-            "label": "Run balancer (OneToOne)",
+            "label": "Launch balancer (OneToOne)",
             "type": "shell",
             "command": "go",
             "options": {
@@ -41,6 +41,20 @@
                 "${workspaceFolder}/example/coordinators.toml",
                 "${workspaceFolder}/example/balancer.toml",
             ]
-        }
+        },
+        {
+            "label": "Launch service (Calculator)",
+            "type": "shell",
+            "command": "go",
+            "options": {
+                "cwd": "${workspaceFolder}/example/calculator/"
+            },
+            "args": [
+                "run",
+                "*.go",
+                "${workspaceFolder}/example/coordinators.toml",
+                "${workspaceFolder}/example/microservice.toml",
+            ]
+        },
     ]
 }

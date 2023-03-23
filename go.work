@@ -5,6 +5,7 @@ use ./gomods/gateway
 use ./gomods/coordinator
 use ./gomods/coordinator-api
 use ./gomods/balancer-api
+use ./gomods/microservice-api
 use ./gomods/common
 
 // Balancers

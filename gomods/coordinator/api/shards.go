@@ -1,15 +1,14 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
+	"github.com/nfwGytautas/mstk/gomods/common"
 )
 
 // TODO: Test only
-var shards = map[string][]coordinator.Shard{
+var shards = map[string][]common.Shard{
 	"TestService1": {
 		{
 			Name: "Shard1",
@@ -38,7 +37,6 @@ var shards = map[string][]coordinator.Shard{
 
 func getShardsList(c *gin.Context) {
 	service := c.Query("service")
-	log.Printf("Returning: %v", shards[service])
 	c.IndentedJSON(http.StatusOK, shards[service])
 }
 

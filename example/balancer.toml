@@ -5,3 +5,6 @@ Service = "TestService1"
 
 # The frequency shard states are queried in milliseconds
 ShardUpdate = 1000
+
+# URL for hosting the balancer
+URL = "localhost:7070"
