@@ -7,7 +7,4 @@ type Shard struct {
 	// JSON values
 	Name string `json:"Name"`
 	URL  string `json:"URL"`
-
-	// Runtime
-	Busy bool
 }

@@ -1,15 +1,15 @@
 package balancer
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/common"
 	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
@@ -20,18 +20,24 @@ Struct holding information for this balancer
 var BalancerInfo struct {
 	mu sync.RWMutex
 
-	Service     string            `toml:"Service"` // Service that the balancer is managing
-	close       bool              // Flag for checking if the balancer should close
-	ShardUpdate int               `toml:"ShardUpdate"` // Number in ms how often to request for shard instance updates
-	Shards      []common.Shard    // Available shards for the balancer
-	URL         string            `toml:"URL"` // URL for hosting the balancer
-	Endpoints   []common.Endpoint // Endpoints for the service
+	Service     string             `toml:"Service"` // Service that the balancer is managing
+	close       bool               // Flag for checking if the balancer should close
+	ShardUpdate int                `toml:"ShardUpdate"` // Number in ms how often to request for shard instance updates
+	Shards      []common.Shard     // Available shards for the balancer
+	URL         string             `toml:"URL"` // URL for hosting the balancer
+	Endpoints   []common.Endpoint  // Endpoints for the service
+	filterFn    LoadBalancerFilter // Filter to apply
 }
 
 /*
-Setup load balancer library
+Filter for balancing shards
 */
-func Setup() {
+type LoadBalancerFilter func(*gin.Context, []common.Shard) common.Shard
+
+/*
+Start load balancer library
+*/
+func Start(filter LoadBalancerFilter) {
 	log.Println("Setting up balancer lib")
 
 	// Setup coordinator
@@ -47,15 +53,18 @@ func Setup() {
 
 	// Balancer open by default
 	BalancerInfo.close = false
+	BalancerInfo.filterFn = filter
 
-	// Query endpoints
-	log.Println("Querying endpoints")
-	BalancerInfo.Endpoints = coordinator.GetEndpoints(BalancerInfo.Service)
-	log.Printf("Got endpoints: %v", BalancerInfo.Endpoints)
+	// Create gin engine
+	r := gin.Default()
+
+	setupEndpoints(r)
 
 	// Start monitoring shards
 	go readAvailableShards()
-	go monitorShardStatus()
+
+	// Run the balancer
+	r.Run(BalancerInfo.URL)
 }
 
 /*
@@ -85,54 +94,35 @@ func readAvailableShards() {
 	}
 }
 
-/*
-Routine for monitoring status of shards
-*/
-func monitorShardStatus() {
-	log.Printf("Querying shard state at speed of: %vms", BalancerInfo.ShardUpdate)
-	ticker := time.NewTicker(time.Duration(time.Duration(BalancerInfo.ShardUpdate) * time.Millisecond))
+func setupEndpoints(r *gin.Engine) {
+	// Query endpoints
+	log.Println("Querying endpoints")
+	BalancerInfo.Endpoints = coordinator.GetEndpoints(BalancerInfo.Service)
+	log.Printf("Got endpoints: %v", BalancerInfo.Endpoints)
 
-	for range ticker.C {
-		if BalancerInfo.close {
-			// Stop
-			ticker.Stop()
-			return
-		}
-
-		// Query a shard for it's state
-		BalancerInfo.mu.RLock()
-		for _, shard := range BalancerInfo.Shards {
-			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%sstate", shard.URL), nil)
-			if err != nil {
-				log.Println(err)
-				shard.Busy = true
-				continue
-			}
-
-			res, err := http.DefaultClient.Do(req)
-			if err != nil {
-				log.Println(err)
-				shard.Busy = true
-				continue
-			}
-
-			resBody, err := io.ReadAll(res.Body)
-			if err != nil {
-				log.Println(err)
-				shard.Busy = true
-				continue
-			}
-
-			var result bool
-			err = json.Unmarshal(resBody, &result)
-			if err != nil {
-				log.Println(err)
-				shard.Busy = true
-				continue
-			}
-
-			shard.Busy = result
-		}
-		BalancerInfo.mu.RUnlock()
+	// Create routes
+	for _, endpoint := range BalancerInfo.Endpoints {
+		r.GET(endpoint.Name, endpointHandler)
 	}
+}
+
+func endpointHandler(c *gin.Context) {
+	shard := BalancerInfo.filterFn(c, BalancerInfo.Shards)
+
+	url, err := url.Parse(shard.URL)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(url)
+
+	proxy.Director = func(req *http.Request) {
+		req.Header = c.Request.Header
+		req.Host = url.Host
+		req.URL.Scheme = url.Scheme
+		req.URL.Host = url.Host
+	}
+
+	proxy.ServeHTTP(c.Writer, c.Request)
 }

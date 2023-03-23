@@ -1,10 +1,10 @@
 # Describe a load balancer
 
 # The service we are balancing
-Service = "TestService1"
+Service = "Calculator"
 
 # The frequency shard states are queried in milliseconds
-ShardUpdate = 1000
+ShardUpdate = 5000
 
 # URL for hosting the balancer
 URL = "localhost:7070"

@@ -11,7 +11,7 @@ import (
 var services = []common.Service{
 	{
 		Name: "Calculator",
-		URL:  "http://localhost:7070/TestServiceOne/",
+		URL:  "http://localhost:7070/",
 		Endpoints: []common.Endpoint{
 			{
 				Name: "Endpoint1",
@@ -23,7 +23,7 @@ var services = []common.Service{
 	},
 	{
 		Name: "TestService2",
-		URL:  "http://localhost:7071/TestServiceTwo/",
+		URL:  "http://localhost:7071/",
 		Endpoints: []common.Endpoint{
 			{
 				Name: "Endpoint1",

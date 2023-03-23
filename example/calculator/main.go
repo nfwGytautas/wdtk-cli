@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/microservice-api"
@@ -13,5 +14,8 @@ func main() {
 }
 
 func setup(r *gin.Engine) {
-
+	r.GET("/Endpoint1", func(ctx *gin.Context) {
+		log.Println("Echo test")
+		ctx.Status(http.StatusNoContent)
+	})
 }

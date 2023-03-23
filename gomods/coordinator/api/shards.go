@@ -9,7 +9,7 @@ import (
 
 // TODO: Test only
 var shards = map[string][]common.Shard{
-	"TestService1": {
+	"Calculator": {
 		{
 			Name: "Shard1",
 			URL:  "http://localhost:6001/",

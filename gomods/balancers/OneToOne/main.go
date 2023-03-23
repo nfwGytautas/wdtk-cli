@@ -5,17 +5,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/balancer-api"
+	"github.com/nfwGytautas/mstk/gomods/common"
 )
 
 func main() {
 	log.Println("Starting a OneToOne load balancer")
 
-	// Create gin engine
-	r := gin.Default()
-
 	// First setup balancer
-	balancer.Setup()
+	balancer.Start(filterFunc)
+}
 
-	// Run the balancer
-	r.Run(balancer.BalancerInfo.URL)
+func filterFunc(c *gin.Context, shards []common.Shard) common.Shard {
+	// Just forward to the first shard
+	return shards[0]
 }
