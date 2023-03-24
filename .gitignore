@@ -1,2 +1,6 @@
-# Ignore backup files
+# Ignore backup and temporary files
 design/*.drawio.bkp
+design/*.drawio.dtmp
+
+# Ignore data volumes
+docker/auth/data

@@ -3,5 +3,5 @@
 # Name of the coordinator this field is important because it will be used as a lock
 Name = "TestMasterCoordinator"
 
-# Path to run http client on
+# Path to run http client
 Host = "localhost:4040"
