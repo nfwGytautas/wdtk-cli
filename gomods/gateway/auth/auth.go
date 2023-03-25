@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 Struct containing information about authentication configuration
 */
@@ -77,6 +81,10 @@ func AddRoutes(r *gin.Engine) {
 	vP := v.Group("/", AuthenticationMiddleware())
 	vP.GET("/me", meHandler)
 }
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
 
 func loginHandler(c *gin.Context) {
 	// Request model

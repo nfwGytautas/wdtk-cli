@@ -11,6 +11,10 @@ import (
 	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 Struct holding information for this microservice
 */
@@ -21,6 +25,9 @@ var Microservice struct {
 	Busy bool // State of the microservice true for busy, false otherwise
 }
 
+/*
+Function for setting up a microservice
+*/
 type SetupMicroservice func(*gin.Engine)
 
 /*
@@ -46,6 +53,10 @@ func Start(setupFn SetupMicroservice) {
 
 	r.Run(Microservice.URL)
 }
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
 
 func addStateHandlers(r *gin.Engine) {
 	g := r.Group("/state")

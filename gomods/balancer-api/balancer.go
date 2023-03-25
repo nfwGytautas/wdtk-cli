@@ -14,6 +14,10 @@ import (
 	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 Struct holding information for this balancer
 */
@@ -66,6 +70,10 @@ func Start(filter LoadBalancerFilter) {
 	// Run the balancer
 	r.Run(BalancerInfo.URL)
 }
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
 
 /*
 Routine continually reads available shards from a coordinator

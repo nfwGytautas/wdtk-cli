@@ -9,6 +9,10 @@ import (
 	"github.com/nfwGytautas/mstk/gomods/common"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 Send a request to a coordinator requesting for a list of services
 */

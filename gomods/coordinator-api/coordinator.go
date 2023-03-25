@@ -10,6 +10,31 @@ import (
 	"github.com/nfwGytautas/mstk/gomods/common"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
+/*
+Setup the coordinator API package
+*/
+func Setup(configFile string) {
+	// Setup config
+	err := common.StoreTOMLConfig(configFile, &config)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Start monitoring the health of the coordinator
+	go monitorCoordinatorHealth()
+
+	// Wait for the monitor routine to start before returning
+	time.Sleep(1 * time.Second)
+}
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
+
 /*
 Struct for holding a single coordinator config
 */
@@ -31,23 +56,6 @@ Struct for keeping track of the coordinator state
 var cState struct {
 	m         sync.RWMutex
 	activeUrl string
-}
-
-/*
-Setup the coordinator API package
-*/
-func Setup(configFile string) {
-	// Setup config
-	err := common.StoreTOMLConfig(configFile, &config)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	// Start monitoring the health of the coordinator
-	go monitorCoordinatorHealth()
-
-	// Wait for the monitor routine to start before returning
-	time.Sleep(1 * time.Second)
 }
 
 /*

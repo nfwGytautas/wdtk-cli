@@ -7,6 +7,10 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 Read TOML from a specified config file and return a config file
 */

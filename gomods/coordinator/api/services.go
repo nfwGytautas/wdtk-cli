@@ -8,6 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ========================================================================
+// PUBLIC
+// ========================================================================
+
 /*
 GORM service struct
 */
@@ -43,6 +47,27 @@ type Shard struct {
 	URL   string
 	State uint8
 }
+
+/*
+Adds service locator specific gin routes
+*/
+func SetupServicesRoutes(r *gin.Engine) {
+	locator := r.Group("/locator")
+
+	// TODO: Authentication & Authorization
+	locator.GET("/", getServicesList)
+	locator.GET("/expanded", getServicesListExpanded)
+	locator.GET("/endpoints", getServiceEndpoints)
+	locator.GET("/shards", getServiceShards)
+
+	locator.POST("/", registerService)
+	locator.POST("/endpoints", registerEndpoint)
+	locator.POST("/shards", registerShard)
+}
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
 
 func getServiceIdFromName(name string) uint {
 	var s Service
@@ -210,21 +235,4 @@ func registerShard(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
-}
-
-/*
-Adds service locator specific gin routes
-*/
-func SetupServicesRoutes(r *gin.Engine) {
-	locator := r.Group("/locator")
-
-	// TODO: Authentication & Authorization
-	locator.GET("/", getServicesList)
-	locator.GET("/expanded", getServicesListExpanded)
-	locator.GET("/endpoints", getServiceEndpoints)
-	locator.GET("/shards", getServiceShards)
-
-	locator.POST("/", registerService)
-	locator.POST("/endpoints", registerEndpoint)
-	locator.POST("/shards", registerShard)
 }

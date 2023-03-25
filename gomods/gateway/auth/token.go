@@ -13,31 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-/*
-Struct for containing token info
-*/
-type tokenInfo struct {
-	valid bool
-	id    uint
-	role  string
-}
-
-/*
-Generate a an access token for the specified user id
-*/
-func generateToken(user *User) (string, error) {
-	claims := jwt.MapClaims{}
-
-	claims["authorized"] = true
-	claims["user_id"] = user.ID
-	claims["role"] = user.Role
-	claims["exp"] = time.Now().Add(time.Minute * time.Duration(config.TokenLifespan)).Unix()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(config.Secret))
-
-}
+// ========================================================================
+// PUBLIC
+// ========================================================================
 
 /*
 Middleware for authenticating
@@ -97,6 +75,36 @@ func AuthorizationMiddleware(roles []string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
+
+/*
+Struct for containing token info
+*/
+type tokenInfo struct {
+	valid bool
+	id    uint
+	role  string
+}
+
+/*
+Generate a an access token for the specified user id
+*/
+func generateToken(user *User) (string, error) {
+	claims := jwt.MapClaims{}
+
+	claims["authorized"] = true
+	claims["user_id"] = user.ID
+	claims["role"] = user.Role
+	claims["exp"] = time.Now().Add(time.Minute * time.Duration(config.TokenLifespan)).Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte(config.Secret))
+
 }
 
 /*
