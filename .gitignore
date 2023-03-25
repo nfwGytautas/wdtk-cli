@@ -4,3 +4,4 @@ design/*.drawio.dtmp
 
 # Ignore data volumes
 docker/auth/data
+docker/coordinator/data

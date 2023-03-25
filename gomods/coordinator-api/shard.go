@@ -13,7 +13,7 @@ import (
 Send a request to a coordinator requesting for a list of shards assigned to the service
 */
 func GetShards(service string) []common.Shard {
-	req, err := createCoordinatorRequest(http.MethodGet, "/shards/")
+	req, err := createCoordinatorRequest(http.MethodGet, "/locator/shards")
 	if err != nil {
 		log.Println(err)
 		return nil

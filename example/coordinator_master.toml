@@ -5,3 +5,6 @@ Name = "TestMasterCoordinator"
 
 # Path to run http client
 Host = "localhost:4040"
+
+# Connection string for the coordinator
+DatabaseConnectionString = "mstk:mstk123@tcp(127.0.0.1:3307)/coord_db?charset=utf8mb4&parseTime=True&loc=Local"

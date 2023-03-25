@@ -15,6 +15,7 @@ Struct for holding coordinator config
 type config struct {
 	Name string
 	Host string
+	DCS  string `toml:"DatabaseConnectionString"`
 }
 
 func main() {
@@ -29,8 +30,8 @@ func main() {
 	}
 
 	// Setup gin routes
+	api.Setup(cfg.DCS)
 	api.SetupServicesRoutes(r)
-	api.SetupShardsRoutes(r)
 
 	// Run gin and block routine
 	r.Run(cfg.Host)

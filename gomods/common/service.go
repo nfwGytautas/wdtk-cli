@@ -7,6 +7,7 @@ type Service struct {
 	Name      string     `json:"Name"`
 	URL       string     `json:"URL"`
 	Endpoints []Endpoint `json:"Endpoints"`
+	Shards    []Shard    `json:"Shards"`
 }
 
 /*

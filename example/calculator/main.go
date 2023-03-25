@@ -14,7 +14,7 @@ func main() {
 }
 
 func setup(r *gin.Engine) {
-	r.GET("/Endpoint1", func(ctx *gin.Context) {
+	r.GET("/Add", func(ctx *gin.Context) {
 		log.Println("Echo test")
 		ctx.Status(http.StatusNoContent)
 	})

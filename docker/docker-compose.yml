@@ -6,11 +6,25 @@ services:
     build:
       context: ./auth/
       args:
-        - MYSQL_DATABASE=${MYSQL_DATABASE}
+        - MYSQL_DATABASE=${AUTH_MYSQL_DATABASE}
         - MYSQL_USER=${MYSQL_USER}
         - MYSQL_PASSWORD=${MYSQL_PASSWORD}
         - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     ports:
-      - "${MYSQL_PORT}:3306"
+      - "${AUTH_MYSQL_PORT}:3306"
     volumes:
       - ./auth/data:/var/lib/mysql
+
+  # Coordinator DB
+  coordinator-db:
+    build:
+      context: ./coordinator/
+      args:
+        - MYSQL_DATABASE=${COORD_MYSQL_DATABASE}
+        - MYSQL_USER=${MYSQL_USER}
+        - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${COORD_MYSQL_PORT}:3306"
+    volumes:
+      - ./coordinator/data:/var/lib/mysql

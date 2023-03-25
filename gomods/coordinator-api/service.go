@@ -13,7 +13,7 @@ import (
 Send a request to a coordinator requesting for a list of services
 */
 func GetServices() []common.Service {
-	req, err := createCoordinatorRequest(http.MethodGet, "/locator/")
+	req, err := createCoordinatorRequest(http.MethodGet, "/locator/expanded")
 	if err != nil {
 		log.Println(err)
 		return nil

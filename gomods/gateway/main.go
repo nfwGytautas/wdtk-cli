@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -45,17 +44,6 @@ func main() {
 
 	// Configure gin
 	auth.AddRoutes(r)
-
-	// Test endpoint
-	g := r.Group("/", auth.AuthenticationMiddleware(), auth.AuthorizationMiddleware([]string{"new"}))
-	g.GET("/test", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "Test")
-	})
-
-	g2 := r.Group("/", auth.AuthenticationMiddleware(), auth.AuthorizationMiddleware([]string{"admin"}))
-	g2.GET("/test2", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "Test")
-	})
 
 	// Run gin and block routine
 	r.Run(fmt.Sprintf("localhost:%v", cfg.Port))

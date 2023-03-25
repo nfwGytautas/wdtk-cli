@@ -107,9 +107,14 @@ func setupEndpoints(r *gin.Engine) {
 }
 
 func endpointHandler(c *gin.Context) {
+	if len(BalancerInfo.Shards) == 0 {
+		c.String(http.StatusPreconditionFailed, "No available shards")
+		return
+	}
+
 	shard := BalancerInfo.filterFn(c, BalancerInfo.Shards)
 
-	url, err := url.Parse(shard.URL)
+	url, err := url.Parse("http://" + shard.URL)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
