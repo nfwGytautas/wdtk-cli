@@ -2,6 +2,6 @@
 design/*.drawio.bkp
 design/*.drawio.dtmp
 
-# Ignore data volumes
-docker/auth/data
-docker/coordinator/data
+# Ignore everything except the utility scripts
+bin/*
+!bin/build.py

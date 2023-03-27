@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -54,6 +57,7 @@ func Setup(cfg AuthConfig) {
 
 	log.Println("Trying to connect to auth database")
 	config = cfg
+	common.APISecret = config.Secret
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.Name, config.Password, config.URL, config.DBName)
 
@@ -78,13 +82,30 @@ func AddRoutes(r *gin.Engine) {
 	v.POST("/login", loginHandler)
 	v.POST("/register", registerHandler)
 
-	vP := v.Group("/", AuthenticationMiddleware())
+	vP := v.Group("/", common.AuthenticationMiddleware())
 	vP.GET("/me", meHandler)
 }
 
 // ========================================================================
 // PRIVATE
 // ========================================================================
+
+/*
+Generate a an access token for the specified user id
+*/
+func generateToken(user *User) (string, error) {
+	claims := jwt.MapClaims{}
+
+	claims["authorized"] = true
+	claims["user_id"] = user.ID
+	claims["role"] = user.Role
+	claims["exp"] = time.Now().Add(time.Minute * time.Duration(config.TokenLifespan)).Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte(config.Secret))
+
+}
 
 func loginHandler(c *gin.Context) {
 	// Request model
@@ -152,13 +173,13 @@ func registerHandler(c *gin.Context) {
 func meHandler(c *gin.Context) {
 	var u User
 
-	info, err := parseToken(c)
+	info, err := common.ParseToken(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = db.First(&u, info.id).Error
+	err = db.First(&u, info.ID).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

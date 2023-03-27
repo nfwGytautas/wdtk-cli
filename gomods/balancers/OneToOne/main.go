@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/balancer-api"
-	"github.com/nfwGytautas/mstk/gomods/common"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 )
 
 func main() {

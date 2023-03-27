@@ -56,5 +56,25 @@
                 "${workspaceFolder}/example/microservice.toml",
             ]
         },
+        {
+            "label": "Minikube tunnel",
+            "type": "shell",
+            "command": "minikube",
+            "args": [
+                "tunnel",
+            ]
+        },
+        {
+            "label": "Build All",
+            "type": "shell",
+            "command": "python3",
+            "options": {
+                "cwd": "${workspaceFolder}/bin"
+            },
+            "args": [
+                "build.py",
+                "--build"
+            ]
+        },
     ]
 }

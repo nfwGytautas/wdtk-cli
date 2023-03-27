@@ -1,4 +1,4 @@
-package auth
+package common
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -18,15 +17,29 @@ import (
 // ========================================================================
 
 /*
+Struct for containing token info
+*/
+type TokenInfo struct {
+	Valid bool
+	ID    uint
+	Role  string
+}
+
+/*
+API Secret for parsing JWT tokens
+*/
+var APISecret string
+
+/*
 Middleware for authenticating
 
 Usage:
-r.Use(auth.AuthenticationMiddleware())
+r.Use(common.JwtAuthenticationMiddleware())
 */
 func AuthenticationMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		info, err := parseToken(c)
+		info, err := ParseToken(c)
 		if err != nil {
 			log.Println(err)
 			c.String(http.StatusInternalServerError, "Token")
@@ -34,7 +47,7 @@ func AuthenticationMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if !info.valid {
+		if !info.Valid {
 			c.String(http.StatusUnauthorized, "Unauthorized")
 			c.Abort()
 			return
@@ -48,11 +61,11 @@ func AuthenticationMiddleware() gin.HandlerFunc {
 Middleware for authorization
 
 Usage:
-r.Use(auth.AuthorizationMiddleware([]string{"role"}))
+r.Use(common.JwtAuthorizationMiddleware([]string{"role"}))
 */
-func AuthorizationMiddleware(roles []string) gin.HandlerFunc {
+func JwtAuthorizationMiddleware(roles []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		info, err := parseToken(c)
+		info, err := ParseToken(c)
 		if err != nil {
 			log.Println(err)
 			c.String(http.StatusInternalServerError, "Token")
@@ -61,7 +74,7 @@ func AuthorizationMiddleware(roles []string) gin.HandlerFunc {
 
 		valid := false
 		for _, role := range roles {
-			if role == info.role {
+			if role == info.Role {
 				valid = true
 				break
 			}
@@ -77,42 +90,12 @@ func AuthorizationMiddleware(roles []string) gin.HandlerFunc {
 	}
 }
 
-// ========================================================================
-// PRIVATE
-// ========================================================================
-
-/*
-Struct for containing token info
-*/
-type tokenInfo struct {
-	valid bool
-	id    uint
-	role  string
-}
-
-/*
-Generate a an access token for the specified user id
-*/
-func generateToken(user *User) (string, error) {
-	claims := jwt.MapClaims{}
-
-	claims["authorized"] = true
-	claims["user_id"] = user.ID
-	claims["role"] = user.Role
-	claims["exp"] = time.Now().Add(time.Minute * time.Duration(config.TokenLifespan)).Unix()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(config.Secret))
-
-}
-
 /*
 Parse a token from gin context
 */
-func parseToken(c *gin.Context) (tokenInfo, error) {
-	result := tokenInfo{}
-	result.valid = false
+func ParseToken(c *gin.Context) (TokenInfo, error) {
+	result := TokenInfo{}
+	result.Valid = false
 
 	tokenString := c.Query("token")
 
@@ -135,7 +118,7 @@ func parseToken(c *gin.Context) (tokenInfo, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(config.Secret), nil
+		return []byte(APISecret), nil
 	})
 
 	if err != nil {
@@ -155,11 +138,11 @@ func parseToken(c *gin.Context) (tokenInfo, error) {
 		return result, nil
 	}
 
-	result.id = uint(uid)
+	result.ID = uint(uid)
 
 	// Role
-	result.role = claims["role"].(string)
+	result.Role = claims["role"].(string)
 
-	result.valid = true
+	result.Valid = true
 	return result, nil
 }

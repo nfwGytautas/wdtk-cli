@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/gomods/common"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 	"github.com/nfwGytautas/mstk/gomods/coordinator/api"
 )
 

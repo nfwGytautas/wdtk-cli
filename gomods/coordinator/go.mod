@@ -39,6 +39,6 @@ require (
 	gorm.io/gorm v1.24.6 // indirect
 )
 
-replace github.com/nfwGytautas/mstk/gomods/common => ../common
+replace github.com/nfwGytautas/mstk/gomods/common-api => ../common-api
 
 replace github.com/nfwGytautas/mstk/gomods/coordinator-api => ../coordinator-api

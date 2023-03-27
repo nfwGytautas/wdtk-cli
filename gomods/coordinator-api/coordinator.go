@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nfwGytautas/mstk/gomods/common"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 )
 
 // ========================================================================

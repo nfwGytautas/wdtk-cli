@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordinator-db
+spec:
+  selector:
+    matchLabels:
+      app: coordinator-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: coordinator-db
+    spec:
+      containers:
+      - image: mysql:latest
+        name: mysql
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "0.5"
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: coordinator-secret
+              key: password
+        - name: MYSQL_USER
+          value: "mstk"
+        - name: MYSQL_DATABASE
+          value: "coordinator_db"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: coordinator-secret
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: coordinator-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: coordinator-persistent-storage
+        persistentVolumeClaim:
+          claimName: coordinator-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-db
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3307
+  selector:
+    app: coordinator-db
+  type: LoadBalancer

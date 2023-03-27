@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/gin-gonic/gin v1.9.0
-	github.com/nfwGytautas/mstk/gomods/common v0.0.0-00010101000000-000000000000
+	github.com/nfwGytautas/mstk/gomods/common-api v0.0.0-00010101000000-000000000000
 	github.com/nfwGytautas/mstk/gomods/coordinator-api v0.0.0-00010101000000-000000000000
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/gorm v1.24.6
@@ -41,6 +41,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/nfwGytautas/mstk/gomods/common => ../common
+replace github.com/nfwGytautas/mstk/gomods/common-api => ../common-api
 
 replace github.com/nfwGytautas/mstk/gomods/coordinator-api => ../coordinator-api
