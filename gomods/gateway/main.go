@@ -29,5 +29,5 @@ func main() {
 	auth.AddRoutes(r)
 
 	// Run gin and block routine
-	r.Run("localhost:8080")
+	r.Run(":8080")
 }

@@ -3,6 +3,7 @@ package auth
 import (
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -30,35 +31,28 @@ type User struct {
 }
 
 // Database
-var db *gorm.DB
+var dbConnection struct {
+	mx sync.RWMutex
+	db *gorm.DB
+}
 
 const TokenLifespan = 60 // Lifespan in minutes
 const APISecret = "MSTK_API_SECRET_TEST"
-const DBConnectionString = "mstk:mstk123@tcp(tcp://auth_db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"
+const DBConnectionString = "mstk:mstk123@tcp(auth-db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"
 
 /*
 Setup authentication database connection
 */
 func Setup() {
-	var err error
-
-	log.Println("Trying to connect to auth database")
-
-	db, err = gorm.Open(mysql.Open(DBConnectionString), &gorm.Config{})
-	if err != nil {
-		log.Panic(err)
-	}
-
-	db.AutoMigrate(&User{})
-
-	log.Println("Database UP and running")
+	dbConnection.db = nil
+	go checkDBConnection()
 }
 
 /*
 Adds GIN handlers for authentication
 */
 func AddRoutes(r *gin.Engine) {
-	v := r.Group("/auth")
+	v := r.Group("/auth", dbMiddleware())
 
 	v.POST("/login", loginHandler)
 	v.POST("/register", registerHandler)
@@ -70,6 +64,55 @@ func AddRoutes(r *gin.Engine) {
 // ========================================================================
 // PRIVATE
 // ========================================================================
+
+/*
+Middleware for making sure database is online
+*/
+func dbMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		dbConnection.mx.Lock()
+
+		if dbConnection.db == nil {
+			log.Println("Database not ready yet returning 503")
+			c.Status(http.StatusServiceUnavailable)
+			c.Abort()
+			dbConnection.mx.Unlock()
+			return
+		}
+
+		dbConnection.mx.Unlock()
+		c.Next()
+	}
+}
+
+/*
+Continually perform checks on the database connection
+*/
+func checkDBConnection() {
+	var err error
+	log.Println("DB heartbeat started")
+
+	for range time.Tick(time.Second * 5) {
+		if dbConnection.db == nil {
+			dbConnection.mx.Lock()
+
+			log.Println("Trying to connect to auth database")
+
+			dbConnection.db, err = gorm.Open(mysql.Open(DBConnectionString), &gorm.Config{})
+			if err != nil {
+				dbConnection.db = nil
+				dbConnection.mx.Unlock()
+				continue
+			}
+
+			dbConnection.db.AutoMigrate(&User{})
+
+			log.Println("Database UP and running")
+
+			dbConnection.mx.Unlock()
+		}
+	}
+}
 
 /*
 Generate a an access token for the specified user id
@@ -91,8 +134,8 @@ func generateToken(user *User) (string, error) {
 func loginHandler(c *gin.Context) {
 	// Request model
 	input := struct {
-		Identifier string
-		Password   string
+		Identifier string `json:"identifier" binding:"required"`
+		Password   string `json:"password" binding:"required"`
 	}{}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -103,7 +146,9 @@ func loginHandler(c *gin.Context) {
 	u := User{}
 
 	// Get username
-	err := db.Model(User{}).Where("identifier = ?", input.Identifier).Take(&u).Error
+	dbConnection.mx.Lock()
+	err := dbConnection.db.Model(User{}).Where("identifier = ?", input.Identifier).Take(&u).Error
+	dbConnection.mx.Unlock()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -111,7 +156,7 @@ func loginHandler(c *gin.Context) {
 
 	// Verify password
 	err = verifyPassword(input.Password, u.Password)
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+	if err != nil || err == bcrypt.ErrMismatchedHashAndPassword {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -129,8 +174,8 @@ func loginHandler(c *gin.Context) {
 func registerHandler(c *gin.Context) {
 	// Request model
 	input := struct {
-		Identifier string
-		Password   string
+		Identifier string `json:"identifier" binding:"required"`
+		Password   string `json:"password" binding:"required"`
 	}{}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -140,12 +185,22 @@ func registerHandler(c *gin.Context) {
 
 	u := User{}
 	u.Identifier = input.Identifier
-	u.Password = input.Password
-	u.Role = "new"
 
-	err := db.Create(&u).Error
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	u.Password = string(hash)
+	u.Role = "new"
+
+	dbConnection.mx.Lock()
+	err = dbConnection.db.Create(&u).Error
+	dbConnection.mx.Unlock()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
@@ -160,7 +215,9 @@ func meHandler(c *gin.Context) {
 		return
 	}
 
-	err = db.First(&u, info.ID).Error
+	dbConnection.mx.Lock()
+	err = dbConnection.db.First(&u, info.ID).Error
+	dbConnection.mx.Unlock()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

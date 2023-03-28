@@ -2,66 +2,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Launch gateway",
-            "type": "shell",
-            "command": "go",
-            "options": {
-                "cwd": "${workspaceFolder}/gomods/gateway/"
-            },
-            "args": [
-                "run",
-                "*.go",
-                "${workspaceFolder}/example/coordinators.toml",
-                "${workspaceFolder}/example/gateway.toml"
-            ]
-        },
-        {
-            "label": "Launch coordinator (master)",
-            "type": "shell",
-            "command": "go",
-            "options": {
-                "cwd": "${workspaceFolder}/gomods/coordinator/"
-            },
-            "args": [
-                "run",
-                "*.go",
-                "${workspaceFolder}/example/coordinator_master.toml",
-            ]
-        },
-        {
-            "label": "Launch balancer (OneToOne)",
-            "type": "shell",
-            "command": "go",
-            "options": {
-                "cwd": "${workspaceFolder}/gomods/balancers/OneToOne/"
-            },
-            "args": [
-                "run",
-                "*.go",
-                "${workspaceFolder}/example/coordinators.toml",
-                "${workspaceFolder}/example/balancer.toml",
-            ]
-        },
-        {
-            "label": "Launch service (Calculator)",
-            "type": "shell",
-            "command": "go",
-            "options": {
-                "cwd": "${workspaceFolder}/example/calculator/"
-            },
-            "args": [
-                "run",
-                "*.go",
-                "${workspaceFolder}/example/coordinators.toml",
-                "${workspaceFolder}/example/microservice.toml",
-            ]
-        },
-        {
-            "label": "Minikube tunnel",
+            "label": "[Minikube] Tunnel",
             "type": "shell",
             "command": "minikube",
             "args": [
                 "tunnel",
+            ]
+        },
+        {
+            "label": "[Minikube] Push",
+            "type": "shell",
+            "command": "./push-minikube.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/kubes/scripts/"
+            },
+            "dependsOn": [
+                "Push All"
+            ]
+        },
+        {
+            "label": "Push All",
+            "type": "shell",
+            "command": "python3",
+            "dependsOn": [
+                "Build All"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/bin"
+            },
+            "args": [
+                "build.py",
+                "push"
             ]
         },
         {
@@ -76,7 +47,7 @@
             },
             "args": [
                 "build.py",
-                "--build"
+                "build"
             ]
         },
         {
@@ -88,8 +59,36 @@
             },
             "args": [
                 "build.py",
-                "--clean"
+                "clean"
             ]
+        },
+        {
+            "label": "[K8S] Teardown",
+            "type": "shell",
+            "command": "./teardown.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/kubes/"
+            },
+        },
+        {
+            "label": "[K8S] Setup",
+            "type": "shell",
+            "command": "./setup.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/kubes/"
+            },
+            "dependsOn": [
+                "[K8S] Teardown"
+            ]
+        },
+        {
+            "label": "[MSTK] Start",
+            "type": "shell",
+            "dependsOn": [
+                "[Minikube] Push",
+                "[K8S] Setup"
+            ],
+            "dependsOrder": "sequence"
         },
     ]
 }

@@ -45,3 +45,15 @@ spec:
       - name: auth-persistent-storage
         persistentVolumeClaim:
           claimName: auth-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-db
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+  selector:
+    app: auth-db
