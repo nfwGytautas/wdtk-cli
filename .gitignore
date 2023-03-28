@@ -2,6 +2,8 @@
 design/*.drawio.bkp
 design/*.drawio.dtmp
 
-# Ignore everything except the utility scripts
+# Ignore everything except the utility script and template dockerfile
 bin/*
 !bin/build.py
+!bin/Dockerfile.build
+!bin/Dockerfile.template

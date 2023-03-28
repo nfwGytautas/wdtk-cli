@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mstk-gateway
+spec:
+  selector:
+    matchLabels:
+      app: mstk-gateway
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mstk-gateway
+    spec:
+      containers:
+      - image: mstk/gateway:0.0.0
+        name: mstk-gateway
+        imagePullPolicy: Never
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "0.5"
+        ports:
+        - containerPort: 8080
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mstk-gateway
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: mstk-gateway
+  type: LoadBalancer

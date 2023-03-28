@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -18,19 +17,6 @@ import (
 // PUBLIC
 // ========================================================================
 
-/*
-Struct containing information about authentication configuration
-*/
-type AuthConfig struct {
-	Name     string
-	Password string
-	URL      string
-	DBName   string
-
-	TokenLifespan int    // Minutes that a JWT token lasts
-	Secret        string // API secret
-}
-
 //TODO: Add pepper and salt to authentication
 
 /*
@@ -43,27 +29,22 @@ type User struct {
 	Role       string // Role of the user (for applications that don't use Authorization this is useless)
 }
 
-// Keep config information global
-var config AuthConfig
-
 // Database
 var db *gorm.DB
+
+const TokenLifespan = 60 // Lifespan in minutes
+const APISecret = "MSTK_API_SECRET_TEST"
+const DBConnectionString = "mstk:mstk123@tcp(tcp://auth_db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"
 
 /*
 Setup authentication database connection
 */
-func Setup(cfg AuthConfig) {
+func Setup() {
 	var err error
 
 	log.Println("Trying to connect to auth database")
-	config = cfg
-	common.APISecret = config.Secret
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.Name, config.Password, config.URL, config.DBName)
-
-	log.Printf("Connection string: %s", dsn)
-
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err = gorm.Open(mysql.Open(DBConnectionString), &gorm.Config{})
 	if err != nil {
 		log.Panic(err)
 	}
@@ -99,11 +80,11 @@ func generateToken(user *User) (string, error) {
 	claims["authorized"] = true
 	claims["user_id"] = user.ID
 	claims["role"] = user.Role
-	claims["exp"] = time.Now().Add(time.Minute * time.Duration(config.TokenLifespan)).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * time.Duration(TokenLifespan)).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(config.Secret))
+	return token.SignedString([]byte(APISecret))
 
 }
 

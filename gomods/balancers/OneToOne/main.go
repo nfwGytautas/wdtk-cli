@@ -12,7 +12,14 @@ func main() {
 	log.Println("Starting a OneToOne load balancer")
 
 	// First setup balancer
-	balancer.Start(filterFunc)
+	balancer.Start(configFunc, filterFunc)
+}
+
+func configFunc() balancer.BalancerInfo {
+	return balancer.BalancerInfo{
+		Service:     "Calculator",
+		ShardUpdate: 5000,
+	}
 }
 
 func filterFunc(c *gin.Context, shards []common.Shard) common.Shard {

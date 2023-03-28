@@ -17,7 +17,7 @@ var db *gorm.DB
 /*
 Sets up the api package
 */
-func Setup(dcs string) {
+func Setup() {
 	var err error
 
 	log.Println("Preparing API package")
@@ -33,3 +33,9 @@ func Setup(dcs string) {
 
 	log.Println("API package ready")
 }
+
+// ========================================================================
+// PRIVATE
+// ========================================================================
+
+const dcs = "mstk:mstk123@tcp(auth_db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"

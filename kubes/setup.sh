@@ -16,3 +16,4 @@ echo "Setting up minikube kubernetes cluster"
 # Everything else
 kubectl apply -f auth/
 kubectl apply -f coordinator/
+kubectl apply -f gateway/

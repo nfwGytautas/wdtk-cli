@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
@@ -21,14 +20,13 @@ import (
 /*
 Struct holding information for this balancer
 */
-var BalancerInfo struct {
+type BalancerInfo struct {
 	mu sync.RWMutex
 
-	Service     string             `toml:"Service"` // Service that the balancer is managing
+	Service     string             // Service that the balancer is managing
 	close       bool               // Flag for checking if the balancer should close
-	ShardUpdate int                `toml:"ShardUpdate"` // Number in ms how often to request for shard instance updates
+	ShardUpdate int                // Number in ms how often to request for shard instance updates
 	Shards      []common.Shard     // Available shards for the balancer
-	URL         string             `toml:"URL"` // URL for hosting the balancer
 	Endpoints   []common.Endpoint  // Endpoints for the service
 	filterFn    LoadBalancerFilter // Filter to apply
 }
@@ -39,25 +37,32 @@ Filter for balancing shards
 type LoadBalancerFilter func(*gin.Context, []common.Shard) common.Shard
 
 /*
+Function for configuring a balancer
+*/
+type Configure func() BalancerInfo
+
+/*
+Configuration
+*/
+var balancerInfo BalancerInfo
+
+/*
 Start load balancer library
 */
-func Start(filter LoadBalancerFilter) {
+func Start(config Configure, filter LoadBalancerFilter) {
 	log.Println("Setting up balancer lib")
 
 	// Setup coordinator
-	coordinator.Setup(os.Args[1])
+	coordinator.Setup()
 
-	// Read balancer config
-	err := common.StoreTOMLConfig(os.Args[2], &BalancerInfo)
-	if err != nil {
-		log.Panic(err)
-	}
+	// Get configuration
+	balancerInfo = config()
 
-	log.Printf("Service: %s", BalancerInfo.Service)
+	log.Printf("Service: %s", balancerInfo.Service)
 
 	// Balancer open by default
-	BalancerInfo.close = false
-	BalancerInfo.filterFn = filter
+	balancerInfo.close = false
+	balancerInfo.filterFn = filter
 
 	// Create gin engine
 	r := gin.Default()
@@ -68,7 +73,7 @@ func Start(filter LoadBalancerFilter) {
 	go readAvailableShards()
 
 	// Run the balancer
-	r.Run(BalancerInfo.URL)
+	r.Run("localhost:8080")
 }
 
 // ========================================================================
@@ -79,25 +84,25 @@ func Start(filter LoadBalancerFilter) {
 Routine continually reads available shards from a coordinator
 */
 func readAvailableShards() {
-	log.Printf("Querying new shards at speed of: %vms", BalancerInfo.ShardUpdate)
-	ticker := time.NewTicker(time.Duration(time.Duration(BalancerInfo.ShardUpdate) * time.Millisecond))
+	log.Printf("Querying new shards at speed of: %vms", balancerInfo.ShardUpdate)
+	ticker := time.NewTicker(time.Duration(time.Duration(balancerInfo.ShardUpdate) * time.Millisecond))
 
 	for range ticker.C {
-		if BalancerInfo.close {
+		if balancerInfo.close {
 			// Stop
 			ticker.Stop()
 			return
 		}
 
 		// Query coordinator for shards
-		shards := coordinator.GetShards(BalancerInfo.Service)
+		shards := coordinator.GetShards(balancerInfo.Service)
 
 		if shards != nil {
 			log.Printf("Got shards: %v", shards)
 
-			BalancerInfo.mu.Lock()
-			BalancerInfo.Shards = shards
-			BalancerInfo.mu.Unlock()
+			balancerInfo.mu.Lock()
+			balancerInfo.Shards = shards
+			balancerInfo.mu.Unlock()
 		}
 	}
 }
@@ -105,22 +110,22 @@ func readAvailableShards() {
 func setupEndpoints(r *gin.Engine) {
 	// Query endpoints
 	log.Println("Querying endpoints")
-	BalancerInfo.Endpoints = coordinator.GetEndpoints(BalancerInfo.Service)
-	log.Printf("Got endpoints: %v", BalancerInfo.Endpoints)
+	balancerInfo.Endpoints = coordinator.GetEndpoints(balancerInfo.Service)
+	log.Printf("Got endpoints: %v", balancerInfo.Endpoints)
 
 	// Create routes
-	for _, endpoint := range BalancerInfo.Endpoints {
+	for _, endpoint := range balancerInfo.Endpoints {
 		r.GET(endpoint.Name, endpointHandler)
 	}
 }
 
 func endpointHandler(c *gin.Context) {
-	if len(BalancerInfo.Shards) == 0 {
+	if len(balancerInfo.Shards) == 0 {
 		c.String(http.StatusPreconditionFailed, "No available shards")
 		return
 	}
 
-	shard := BalancerInfo.filterFn(c, BalancerInfo.Shards)
+	shard := balancerInfo.filterFn(c, balancerInfo.Shards)
 
 	url, err := url.Parse("http://" + shard.URL)
 	if err != nil {

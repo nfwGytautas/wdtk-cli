@@ -1,6 +1,0 @@
-# Configure the services to know how to reach coordinator
-[Master]
-    Host = "http://localhost:4040"
-
-[Backup]
-    Host = "http://localhost:4041"

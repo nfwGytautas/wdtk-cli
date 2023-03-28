@@ -8,3 +8,4 @@ DATA_DIR=$CWD/data/
 # Everything else
 kubectl delete -f auth/
 kubectl delete -f coordinator/
+kubectl delete -f gateway/

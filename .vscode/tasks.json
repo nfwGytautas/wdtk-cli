@@ -68,12 +68,27 @@
             "label": "Build All",
             "type": "shell",
             "command": "python3",
+            "dependsOn": [
+                "Clean All"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}/bin"
             },
             "args": [
                 "build.py",
                 "--build"
+            ]
+        },
+        {
+            "label": "Clean All",
+            "type": "shell",
+            "command": "python3",
+            "options": {
+                "cwd": "${workspaceFolder}/bin"
+            },
+            "args": [
+                "build.py",
+                "--clean"
             ]
         },
     ]

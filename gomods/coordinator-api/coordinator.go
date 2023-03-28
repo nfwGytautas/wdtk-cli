@@ -1,13 +1,12 @@
 package coordinator
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/nfwGytautas/mstk/gomods/common-api"
 )
 
 // ========================================================================
@@ -17,13 +16,7 @@ import (
 /*
 Setup the coordinator API package
 */
-func Setup(configFile string) {
-	// Setup config
-	err := common.StoreTOMLConfig(configFile, &config)
-	if err != nil {
-		log.Panic(err)
-	}
-
+func Setup() {
 	// Start monitoring the health of the coordinator
 	go monitorCoordinatorHealth()
 
@@ -36,26 +29,11 @@ func Setup(configFile string) {
 // ========================================================================
 
 /*
-Struct for holding a single coordinator config
-*/
-type coordinator struct {
-	Host string
-}
-
-/*
-Struct for holding coordinator config
-*/
-var config struct {
-	Master coordinator
-	Backup coordinator
-}
-
-/*
 Struct for keeping track of the coordinator state
 */
 var cState struct {
-	m         sync.RWMutex
-	activeUrl string
+	m      sync.RWMutex
+	online bool
 }
 
 /*
@@ -70,7 +48,7 @@ func monitorCoordinatorHealth() {
 	log.Println("Coordinator health monitor started")
 
 	// Set to master by default
-	cState.activeUrl = config.Master.Host
+	cState.online = true
 }
 
 /*
@@ -79,7 +57,12 @@ Make a request to the coordinator this will automatically resolve the correct UR
 func createCoordinatorRequest(method string, endpoint string) (*http.Request, error) {
 	cState.m.RLock()
 	defer cState.m.RUnlock()
-	return http.NewRequest(method, fmt.Sprintf("%s%s", cState.activeUrl, endpoint), nil)
+
+	if !cState.online {
+		return nil, errors.New("coordinator offline")
+	}
+
+	return http.NewRequest(method, fmt.Sprintf("http://coordinator:8080/%s", endpoint), nil)
 }
 
 /*

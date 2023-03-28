@@ -45,15 +45,3 @@ spec:
       - name: coordinator-persistent-storage
         persistentVolumeClaim:
           claimName: coordinator-pv-claim
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: coordinator-db
-spec:
-  ports:
-    - port: 3306
-      targetPort: 3307
-  selector:
-    app: coordinator-db
-  type: LoadBalancer
