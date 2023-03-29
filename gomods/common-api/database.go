@@ -46,8 +46,6 @@ func (dc *DatabaseConnection) Initialize(cfg DatabaseConnectionConfig) error {
 	dc.cfg = cfg
 	dc.migrated = false
 
-	dc.connect()
-
 	return nil
 }
 
@@ -57,7 +55,7 @@ Middleware for gin that requires a database connection
 func RequireDatabaseConnectionMiddleware(dc *DatabaseConnection) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Avoid processing requests since service unavailable
-		if !dc.ping() {
+		if !dc.connect() {
 			ctx.Abort()
 			ctx.Status(http.StatusServiceUnavailable)
 			return
@@ -65,10 +63,11 @@ func RequireDatabaseConnectionMiddleware(dc *DatabaseConnection) gin.HandlerFunc
 
 		if !dc.migrated && dc.cfg.MigrateCallback != nil {
 			// Migrate
+			log.Println("Migrating database")
 			dc.mx.Lock()
+			defer dc.mx.Unlock()
 			dc.cfg.MigrateCallback(dc.DB)
 			dc.migrated = true
-			dc.mx.Unlock()
 		}
 
 		ctx.Next()
@@ -82,28 +81,36 @@ func RequireDatabaseConnectionMiddleware(dc *DatabaseConnection) gin.HandlerFunc
 /*
 Connect to database
 */
-func (dc *DatabaseConnection) connect() {
+func (dc *DatabaseConnection) connect() bool {
 	var err error
 
-	dc.DB, err = gorm.Open(mysql.Open(dc.cfg.DCS), &gorm.Config{})
-	if err != nil {
-		// Failed to open connection
-		log.Println(err)
+	if dc.DB == nil {
+		// Open
+		dc.DB, err = gorm.Open(mysql.Open(dc.cfg.DCS), &gorm.Config{})
+		if err != nil {
+			// Failed to open connection
+			log.Println(err)
+			dc.DB = nil
+			return false
+		}
+
+		return true
+	} else {
+		// Ping
+		db, err := dc.DB.DB()
+
+		if err != nil {
+			// We failed to get a DB instance?
+			log.Println(err)
+			return false
+		}
+
+		err = db.Ping()
+		if err != nil {
+			dc.DB = nil
+			return false
+		}
+
+		return true
 	}
-}
-
-/*
-Ping the database connection to check if we are still online
-*/
-func (dc *DatabaseConnection) ping() bool {
-	db, err := dc.DB.DB()
-
-	if err != nil {
-		// We failed to get a DB instance?
-		log.Println(err)
-		return false
-	}
-
-	err = db.Ping()
-	return err == nil
 }

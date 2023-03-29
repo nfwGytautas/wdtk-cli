@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
 
 // ========================================================================
@@ -32,9 +31,6 @@ Setup microservice
 */
 func Start(setupFn SetupMicroservice) {
 	log.Println("Setting up microservice API")
-
-	// Setup coordinator API
-	coordinator.Setup()
 
 	// Create gin engine, set it up, run
 	r := gin.Default()

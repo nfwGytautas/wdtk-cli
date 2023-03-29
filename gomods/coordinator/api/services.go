@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +33,8 @@ type Endpoint struct {
 
 	ServiceID uint
 
-	Name string
+	Name   string
+	Method string
 }
 
 /*
@@ -52,11 +54,12 @@ type Shard struct {
 Adds service locator specific gin routes
 */
 func SetupServicesRoutes(r *gin.Engine) {
-	locator := r.Group("/locator")
+	locator := r.Group("/locator", common.RequireDatabaseConnectionMiddleware(&dbConn))
 
 	// TODO: Authentication & Authorization
 	locator.GET("/", getServicesList)
 	locator.GET("/expanded", getServicesListExpanded)
+	locator.GET("/service/expanded", getServiceExpanded)
 	locator.GET("/endpoints", getServiceEndpoints)
 	locator.GET("/shards", getServiceShards)
 
@@ -104,6 +107,25 @@ func getServicesListExpanded(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, services)
+}
+
+func getServiceExpanded(c *gin.Context) {
+	serviceName := c.Query("service")
+	if serviceName == "" {
+		c.String(http.StatusBadRequest, "service not specified")
+		return
+	}
+
+	var service Service
+	result := dbConn.DB.Preload("Endpoints").Where("name = ?", serviceName).First(&service)
+
+	if result.Error != nil {
+		log.Println(result.Error)
+		c.String(http.StatusInternalServerError, "Failed to query")
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, service)
 }
 
 func getServiceEndpoints(c *gin.Context) {
@@ -177,7 +199,8 @@ func registerService(c *gin.Context) {
 func registerEndpoint(c *gin.Context) {
 	// Request model
 	input := struct {
-		Name string
+		Name   string
+		Method string
 	}{}
 
 	serviceName := c.Query("service")
@@ -193,6 +216,7 @@ func registerEndpoint(c *gin.Context) {
 
 	e := Endpoint{}
 	e.Name = input.Name
+	e.Method = input.Method
 	e.ServiceID = getServiceIdFromName(serviceName)
 
 	err := dbConn.DB.Create(&e).Error

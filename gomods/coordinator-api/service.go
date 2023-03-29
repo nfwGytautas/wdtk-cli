@@ -46,6 +46,42 @@ func GetServices() []common.Service {
 }
 
 /*
+Get a service with the specified name
+*/
+func GetService(name string) (*common.Service, error) {
+	req, err := createCoordinatorRequest(http.MethodGet, "/locator/service/expanded")
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	q := req.URL.Query()
+	q.Add("service", name)
+	req.URL.RawQuery = q.Encode()
+
+	res, err := doRequest(req)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var result common.Service
+	err = json.Unmarshal(resBody, &result)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+/*
 Get endpoints of a specific service
 */
 func GetEndpoints(service string) []common.Endpoint {

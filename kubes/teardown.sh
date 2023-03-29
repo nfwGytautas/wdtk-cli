@@ -7,3 +7,4 @@ DATA_DIR=$CWD/data/
 kubectl delete -f auth/ || true
 kubectl delete -f coordinator/ || true
 kubectl delete -f gateway/ || true
+kubectl delete -f admin/ || true

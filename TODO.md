@@ -14,3 +14,7 @@ TODO: Testing
 
 TODO: Design
     TODO: Migrate to PoCv1 design
+
+
+TODO: Performance
+    TODO: Move migration to MSTK-Admin to make request speeds much faster

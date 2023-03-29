@@ -52,9 +52,6 @@ Start load balancer library
 func Start(config Configure, filter LoadBalancerFilter) {
 	log.Println("Setting up balancer lib")
 
-	// Setup coordinator
-	coordinator.Setup()
-
 	// Get configuration
 	balancerInfo = config()
 

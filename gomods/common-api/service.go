@@ -18,5 +18,6 @@ type Service struct {
 Struct for holding information about a specific endpoint for a service
 */
 type Endpoint struct {
-	Name string `json:"Name"`
+	Name   string `json:"Name"`
+	Method string `json:"Method"`
 }

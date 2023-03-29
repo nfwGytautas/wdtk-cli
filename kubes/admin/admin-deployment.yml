@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mstk-admin
+spec:
+  selector:
+    matchLabels:
+      app: mstk-admin
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mstk-admin
+    spec:
+      containers:
+      - image: mstk/admin:0.0.0
+        name: mstk-admin
+        imagePullPolicy: Never
+        resources:
+          limits:
+            memory: "500M"
+            cpu: "50m"
+        ports:
+        - containerPort: 8080
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mstk-admin
+spec:
+  ports:
+    - port: 9090
+      targetPort: 8080
+  selector:
+    app: mstk-admin
+  type: LoadBalancer
