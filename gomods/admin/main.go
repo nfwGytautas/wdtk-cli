@@ -20,7 +20,6 @@ type Service struct {
 	Name      string `gorm:"unique"`
 	URL       string
 	Endpoints []Endpoint
-	Shards    []Shard
 }
 
 /*
@@ -35,40 +34,28 @@ type Endpoint struct {
 	Method string
 }
 
-/*
-GORM shard struct
-*/
-type Shard struct {
-	gorm.Model
+var serviceDbConn common.DatabaseConnection
 
-	ServiceID uint
-
-	Name  string
-	URL   string
-	State uint8
-}
-
-var dbConn common.DatabaseConnection
-
-const dcs = "mstk:mstk123@tcp(coordinator-db:3306)/coordinator_db?charset=utf8mb4&parseTime=True&loc=Local"
+const dcs_services = "mstk:mstk123@tcp(coordinator-db:3306)/coordinator_db?charset=utf8mb4&parseTime=True&loc=Local"
 
 func main() {
 	log.Println("Setting up MSTK system admin service")
 
-	dbConn = common.DatabaseConnection{}
-	dbConn.Initialize(common.DatabaseConnectionConfig{
-		DCS:             dcs,
-		MigrateCallback: nil,
+	serviceDbConn = common.DatabaseConnection{}
+	serviceDbConn.Initialize(common.DatabaseConnectionConfig{
+		DCS: dcs_services,
+		MigrateCallback: func(d *gorm.DB) {
+			d.AutoMigrate(&Service{}, &Endpoint{})
+		},
 	})
 
 	// Create gin engine
 	r := gin.Default()
 
-	gs := r.Group("/services", common.RequireDatabaseConnectionMiddleware(&dbConn))
-
+	gs := r.Group("/services", common.RequireDatabaseConnectionMiddleware(&serviceDbConn))
 	gs.GET("/", func(c *gin.Context) {
 		var services []Service
-		result := dbConn.DB.Preload("Endpoints").Preload("Shards").Find(&services)
+		result := serviceDbConn.DB.Preload("Endpoints").Preload("Shards").Find(&services)
 
 		if result.Error != nil {
 			log.Println(result.Error)
@@ -78,14 +65,12 @@ func main() {
 
 		c.IndentedJSON(http.StatusOK, services)
 	})
-
 	gs.POST("/", func(c *gin.Context) {
 		// Request model
 		input := struct {
 			Name      string
 			URL       string
 			Endpoints []Endpoint
-			Shards    []Shard
 		}{}
 
 		if err := c.ShouldBindJSON(&input); err != nil {
@@ -97,9 +82,8 @@ func main() {
 		s.Name = input.Name
 		s.URL = input.URL
 		s.Endpoints = input.Endpoints
-		s.Shards = input.Shards
 
-		err := dbConn.DB.Create(&s).Error
+		err := serviceDbConn.DB.Create(&s).Error
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}

@@ -5,12 +5,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/gomods/common-api"
-	"github.com/nfwGytautas/mstk/gomods/coordinator-api"
 )
 
 // ========================================================================
@@ -21,20 +17,18 @@ import (
 Struct holding information for this balancer
 */
 type BalancerInfo struct {
-	mu sync.RWMutex
+	Service  string             // Service that the balancer is managing
+	filterFn LoadBalancerFilter // Filter to apply
+}
 
-	Service     string             // Service that the balancer is managing
-	close       bool               // Flag for checking if the balancer should close
-	ShardUpdate int                // Number in ms how often to request for shard instance updates
-	Shards      []common.Shard     // Available shards for the balancer
-	Endpoints   []common.Endpoint  // Endpoints for the service
-	filterFn    LoadBalancerFilter // Filter to apply
+type Shard struct {
+	URL string
 }
 
 /*
 Filter for balancing shards
 */
-type LoadBalancerFilter func(*gin.Context, []common.Shard) common.Shard
+type LoadBalancerFilter func(*gin.Context) Shard
 
 /*
 Function for configuring a balancer
@@ -58,71 +52,25 @@ func Start(config Configure, filter LoadBalancerFilter) {
 	log.Printf("Service: %s", balancerInfo.Service)
 
 	// Balancer open by default
-	balancerInfo.close = false
 	balancerInfo.filterFn = filter
 
 	// Create gin engine
 	r := gin.Default()
 
-	setupEndpoints(r)
-
-	// Start monitoring shards
-	go readAvailableShards()
+	// TODO: Rest of the endpoints
+	r.GET("/*params", endpointHandler)
+	r.POST("/*params", endpointHandler)
 
 	// Run the balancer
-	r.Run("localhost:8080")
+	r.Run(":8080")
 }
 
 // ========================================================================
 // PRIVATE
 // ========================================================================
 
-/*
-Routine continually reads available shards from a coordinator
-*/
-func readAvailableShards() {
-	log.Printf("Querying new shards at speed of: %vms", balancerInfo.ShardUpdate)
-	ticker := time.NewTicker(time.Duration(time.Duration(balancerInfo.ShardUpdate) * time.Millisecond))
-
-	for range ticker.C {
-		if balancerInfo.close {
-			// Stop
-			ticker.Stop()
-			return
-		}
-
-		// Query coordinator for shards
-		shards := coordinator.GetShards(balancerInfo.Service)
-
-		if shards != nil {
-			log.Printf("Got shards: %v", shards)
-
-			balancerInfo.mu.Lock()
-			balancerInfo.Shards = shards
-			balancerInfo.mu.Unlock()
-		}
-	}
-}
-
-func setupEndpoints(r *gin.Engine) {
-	// Query endpoints
-	log.Println("Querying endpoints")
-	balancerInfo.Endpoints = coordinator.GetEndpoints(balancerInfo.Service)
-	log.Printf("Got endpoints: %v", balancerInfo.Endpoints)
-
-	// Create routes
-	for _, endpoint := range balancerInfo.Endpoints {
-		r.GET(endpoint.Name, endpointHandler)
-	}
-}
-
 func endpointHandler(c *gin.Context) {
-	if len(balancerInfo.Shards) == 0 {
-		c.String(http.StatusPreconditionFailed, "No available shards")
-		return
-	}
-
-	shard := balancerInfo.filterFn(c, balancerInfo.Shards)
+	shard := balancerInfo.filterFn(c)
 
 	url, err := url.Parse("http://" + shard.URL)
 	if err != nil {
@@ -130,9 +78,12 @@ func endpointHandler(c *gin.Context) {
 		return
 	}
 
+	log.Printf("Forwarding '%s' -> '%s'", c.Request.URL.String(), url.String())
+
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	proxy.Director = func(req *http.Request) {
+		req.Method = c.Request.Method
 		req.Header = c.Request.Header
 		req.Host = url.Host
 		req.URL.Scheme = url.Scheme

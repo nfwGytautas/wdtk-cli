@@ -2,6 +2,9 @@
 design/*.drawio.bkp
 design/*.drawio.dtmp
 
+example/balancer/balancer
+example/calculator/calculator
+
 # Ignore everything except the utility script and template dockerfile
 bin/*
 !bin/build.py

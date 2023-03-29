@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/balancer-api"
-	"github.com/nfwGytautas/mstk/gomods/common-api"
 )
 
 func main() {
@@ -17,12 +16,13 @@ func main() {
 
 func configFunc() balancer.BalancerInfo {
 	return balancer.BalancerInfo{
-		Service:     "Calculator",
-		ShardUpdate: 5000,
+		Service: "Calculator",
 	}
 }
 
-func filterFunc(c *gin.Context, shards []common.Shard) common.Shard {
+func filterFunc(c *gin.Context) balancer.Shard {
 	// Just forward to the first shard
-	return shards[0]
+	return balancer.Shard{
+		URL: "shard-calculator:8080",
+	}
 }

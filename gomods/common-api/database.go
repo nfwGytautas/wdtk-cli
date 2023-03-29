@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"sync"
@@ -54,24 +55,40 @@ Middleware for gin that requires a database connection
 */
 func RequireDatabaseConnectionMiddleware(dc *DatabaseConnection) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Avoid processing requests since service unavailable
-		if !dc.connect() {
+		err := RequireDatabaseConnection(dc)
+		if err != nil {
+			log.Println(err)
 			ctx.Abort()
 			ctx.Status(http.StatusServiceUnavailable)
 			return
 		}
 
-		if !dc.migrated && dc.cfg.MigrateCallback != nil {
-			// Migrate
-			log.Println("Migrating database")
-			dc.mx.Lock()
-			defer dc.mx.Unlock()
-			dc.cfg.MigrateCallback(dc.DB)
-			dc.migrated = true
-		}
-
 		ctx.Next()
 	}
+}
+
+/*
+Require the database connection to be valid
+
+Returns nil if valid, an error otherwise
+*/
+func RequireDatabaseConnection(dc *DatabaseConnection) error {
+	// Avoid processing requests since service unavailable
+	if !dc.connect() {
+		return errors.New("can't connect to database")
+	}
+
+	if !dc.migrated && dc.cfg.MigrateCallback != nil {
+		// Migrate
+		log.Println("Migrating database")
+		dc.mx.Lock()
+		defer dc.mx.Unlock()
+
+		dc.cfg.MigrateCallback(dc.DB)
+		dc.migrated = true
+	}
+
+	return nil
 }
 
 // ========================================================================

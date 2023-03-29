@@ -22,7 +22,6 @@ type Service struct {
 	Name      string `gorm:"unique"`
 	URL       string
 	Endpoints []Endpoint
-	Shards    []Shard
 }
 
 /*
@@ -38,19 +37,6 @@ type Endpoint struct {
 }
 
 /*
-GORM shard struct
-*/
-type Shard struct {
-	gorm.Model
-
-	ServiceID uint
-
-	Name  string
-	URL   string
-	State uint8
-}
-
-/*
 Adds service locator specific gin routes
 */
 func SetupServicesRoutes(r *gin.Engine) {
@@ -61,11 +47,9 @@ func SetupServicesRoutes(r *gin.Engine) {
 	locator.GET("/expanded", getServicesListExpanded)
 	locator.GET("/service/expanded", getServiceExpanded)
 	locator.GET("/endpoints", getServiceEndpoints)
-	locator.GET("/shards", getServiceShards)
 
 	locator.POST("/", registerService)
 	locator.POST("/endpoints", registerEndpoint)
-	locator.POST("/shards", registerShard)
 }
 
 // ========================================================================
@@ -98,7 +82,7 @@ func getServicesList(c *gin.Context) {
 
 func getServicesListExpanded(c *gin.Context) {
 	var services []Service
-	result := dbConn.DB.Preload("Endpoints").Preload("Shards").Find(&services)
+	result := dbConn.DB.Preload("Endpoints").Find(&services)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -148,33 +132,12 @@ func getServiceEndpoints(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, s.Endpoints)
 }
 
-func getServiceShards(c *gin.Context) {
-	var s Service
-
-	serviceName := c.Query("service")
-	result := dbConn.DB.Where("name = ?", serviceName).Preload("Shards").First(&s)
-
-	if result.Error != nil {
-		log.Println(result.Error)
-		c.String(http.StatusInternalServerError, "Error retrieving")
-		return
-	}
-
-	if result.RowsAffected == 0 {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, s.Shards)
-}
-
 func registerService(c *gin.Context) {
 	// Request model
 	input := struct {
 		Name      string
 		URL       string
 		Endpoints []Endpoint
-		Shards    []Shard
 	}{}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -186,7 +149,6 @@ func registerService(c *gin.Context) {
 	s.Name = input.Name
 	s.URL = input.URL
 	s.Endpoints = input.Endpoints
-	s.Shards = input.Shards
 
 	err := dbConn.DB.Create(&s).Error
 	if err != nil {
@@ -223,39 +185,6 @@ func registerEndpoint(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
-}
-
-func registerShard(c *gin.Context) {
-	// Request model
-	input := struct {
-		Name  string
-		URL   string
-		State uint8
-	}{}
-
-	serviceName := c.Query("service")
-	if serviceName == "" {
-		c.String(http.StatusBadRequest, "No service provided")
-		return
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	s := Shard{}
-	s.Name = input.Name
-	s.URL = input.URL
-	s.State = input.State
-	s.ServiceID = getServiceIdFromName(serviceName)
-
-	err := dbConn.DB.Create(&s).Error
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})

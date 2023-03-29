@@ -29,12 +29,10 @@ start_time = time.time()
 
 # Get all packages
 gomods = pathlib.Path("../gomods/")
-balancers = pathlib.Path("../gomods/balancers/")
 
 packages = [x.name for x in gomods.glob("*") if not x.name.endswith("-api") and not x.name == "README.md" and not x.name == "balancers"]
-balancers = [x.name for x in balancers.glob("*") if not x.name == "README.md"]
 
-print(f"Found {len(packages)} packages, {len(balancers)} balancers")
+print(f"Found {len(packages)} packages")
 
 # Script content
 if args.target == "build":
@@ -73,11 +71,6 @@ if args.target == "build":
     for i, package in enumerate(packages):
         build_target(i+1, len(packages), package, "", "packages/")
 
-    # Build balancers
-    print("Building balancers")
-    for i, balancer in enumerate(balancers):
-        build_target(i+1, len(balancers), balancer, "balancers/", "balancers/")
-
     # Delete tmp directory
     print("Cleaning up")
     shutil.rmtree("./tmp/", ignore_errors=False, onerror=None)
@@ -87,9 +80,6 @@ elif args.target == "clean":
 
     print("Removing 'packages'")
     shutil.rmtree("./packages/", ignore_errors=True, onerror=None)
-
-    print("Removing 'balancers'")
-    shutil.rmtree("./balancers/", ignore_errors=True, onerror=None)
 
 elif args.target == "push":
     print("Pushing docker images")
@@ -103,8 +93,5 @@ elif args.target == "push":
 
     for i, package in enumerate(packages):
         push_image(i+1, len(packages), "", package, "0.0.0", f"packages/Dockerfile.{package}")
-
-    for i, balancer in enumerate(balancers):
-        push_image(i+1, len(balancers), "balancers-", balancer, "0.0.0", f"balancers/Dockerfile.{balancer}")
 
 print(f"Done in {round((time.time() - start_time), 2)}s")

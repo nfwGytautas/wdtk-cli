@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/nfwGytautas/mstk/gomods/common-api"
-	"gorm.io/gorm"
 )
 
 // Database
@@ -23,10 +22,8 @@ func Setup() {
 	// Open connection
 	dbConn = common.DatabaseConnection{}
 	dbConn.Initialize(common.DatabaseConnectionConfig{
-		DCS: dcs,
-		MigrateCallback: func(d *gorm.DB) {
-			d.AutoMigrate(&Service{}, &Endpoint{}, &Shard{})
-		},
+		DCS:             dcs,
+		MigrateCallback: nil,
 	})
 
 	log.Println("API package ready")

@@ -1,13 +1,12 @@
 go 1.20
 
-// Base
+// Services
 use ./gomods/gateway
 use ./gomods/coordinator
 use ./gomods/admin
+
+// Frameworks
 use ./gomods/coordinator-api
 use ./gomods/balancer-api
 use ./gomods/microservice-api
 use ./gomods/common-api
-
-// Balancers
-use ./gomods/balancers/OneToOne

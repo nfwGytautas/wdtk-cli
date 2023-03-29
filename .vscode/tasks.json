@@ -90,5 +90,13 @@
             ],
             "dependsOrder": "sequence"
         },
+        {
+            "label": "[MSTK] Test",
+            "type": "shell",
+            "command": "./build.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/example/"
+            }
+        },
     ]
 }
