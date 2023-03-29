@@ -1,16 +1,13 @@
 package auth
 
 import (
-	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/nfwGytautas/mstk/gomods/common-api"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -30,29 +27,30 @@ type User struct {
 	Role       string // Role of the user (for applications that don't use Authorization this is useless)
 }
 
-// Database
-var dbConnection struct {
-	mx sync.RWMutex
-	db *gorm.DB
-}
-
 const TokenLifespan = 60 // Lifespan in minutes
 const APISecret = "MSTK_API_SECRET_TEST"
 const DBConnectionString = "mstk:mstk123@tcp(auth-db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"
+
+var dbConn common.DatabaseConnection
 
 /*
 Setup authentication database connection
 */
 func Setup() {
-	dbConnection.db = nil
-	go checkDBConnection()
+	dbConn = common.DatabaseConnection{}
+	dbConn.Initialize(common.DatabaseConnectionConfig{
+		DCS: DBConnectionString,
+		MigrateCallback: func(d *gorm.DB) {
+			d.AutoMigrate(&User{})
+		},
+	})
 }
 
 /*
 Adds GIN handlers for authentication
 */
 func AddRoutes(r *gin.Engine) {
-	v := r.Group("/auth", dbMiddleware())
+	v := r.Group("/auth", common.RequireDatabaseConnectionMiddleware(&dbConn))
 
 	v.POST("/login", loginHandler)
 	v.POST("/register", registerHandler)
@@ -64,55 +62,6 @@ func AddRoutes(r *gin.Engine) {
 // ========================================================================
 // PRIVATE
 // ========================================================================
-
-/*
-Middleware for making sure database is online
-*/
-func dbMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		dbConnection.mx.Lock()
-
-		if dbConnection.db == nil {
-			log.Println("Database not ready yet returning 503")
-			c.Status(http.StatusServiceUnavailable)
-			c.Abort()
-			dbConnection.mx.Unlock()
-			return
-		}
-
-		dbConnection.mx.Unlock()
-		c.Next()
-	}
-}
-
-/*
-Continually perform checks on the database connection
-*/
-func checkDBConnection() {
-	var err error
-	log.Println("DB heartbeat started")
-
-	for range time.Tick(time.Second * 5) {
-		if dbConnection.db == nil {
-			dbConnection.mx.Lock()
-
-			log.Println("Trying to connect to auth database")
-
-			dbConnection.db, err = gorm.Open(mysql.Open(DBConnectionString), &gorm.Config{})
-			if err != nil {
-				dbConnection.db = nil
-				dbConnection.mx.Unlock()
-				continue
-			}
-
-			dbConnection.db.AutoMigrate(&User{})
-
-			log.Println("Database UP and running")
-
-			dbConnection.mx.Unlock()
-		}
-	}
-}
 
 /*
 Generate a an access token for the specified user id
@@ -138,17 +87,16 @@ func loginHandler(c *gin.Context) {
 		Password   string `json:"password" binding:"required"`
 	}{}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+	err := c.ShouldBindJSON(&input)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Get username
 	u := User{}
 
-	// Get username
-	dbConnection.mx.Lock()
-	err := dbConnection.db.Model(User{}).Where("identifier = ?", input.Identifier).Take(&u).Error
-	dbConnection.mx.Unlock()
+	err = dbConn.DB.Model(User{}).Where("identifier = ?", input.Identifier).Take(&u).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -195,9 +143,14 @@ func registerHandler(c *gin.Context) {
 	u.Password = string(hash)
 	u.Role = "new"
 
-	dbConnection.mx.Lock()
-	err = dbConnection.db.Create(&u).Error
-	dbConnection.mx.Unlock()
+	err = dbConn.DB.Model(User{}).Where("identifier = ?", input.Identifier).Take(&u).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = dbConn.DB.Create(&u).Error
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -215,9 +168,7 @@ func meHandler(c *gin.Context) {
 		return
 	}
 
-	dbConnection.mx.Lock()
-	err = dbConnection.db.First(&u, info.ID).Error
-	dbConnection.mx.Unlock()
+	err = dbConn.DB.First(&u, info.ID).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-db
+  name: coordinator-db
 spec:
   selector:
     matchLabels:
-      app: auth-db
+      app: coordinator-db
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: auth-db
+        app: coordinator-db
     spec:
       containers:
       - image: mysql:latest
@@ -29,31 +29,31 @@ spec:
         - name: MYSQL_USER
           value: "mstk"
         - name: MYSQL_DATABASE
-          value: "auth_db"
+          value: "coord_db"
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: auth-secret
+              name: coordinator-secret
               key: password
         ports:
         - containerPort: 3306
           name: mysql
         volumeMounts:
-        - name: auth-persistent-storage
+        - name: coordinator-persistent-storage
           mountPath: /var/lib/mysql
       volumes:
-      - name: auth-persistent-storage
+      - name: coordinator-persistent-storage
         persistentVolumeClaim:
-          claimName: auth-pv-claim
+          claimName: coordinator-pv-claim
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-db
+  name: coordinator-db
 spec:
   ports:
     - port: 3306
       targetPort: 3306
       protocol: TCP
   selector:
-    app: auth-db
+    app: coordinator-db

@@ -1,47 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coordinator-db
+  name: mstk-coordinator
 spec:
   selector:
     matchLabels:
-      app: coordinator-db
+      app: mstk-coordinator
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: coordinator-db
+        app: mstk-coordinator
     spec:
       containers:
-      - image: mysql:latest
-        name: mysql
+      - image: mstk/coordinator:0.0.0
+        name: mstk-coordinator
+        imagePullPolicy: Never
         resources:
           limits:
-            memory: "2Gi"
-            cpu: "0.5"
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: coordinator-secret
-              key: password
-        - name: MYSQL_USER
-          value: "mstk"
-        - name: MYSQL_DATABASE
-          value: "coordinator_db"
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: coordinator-secret
-              key: password
+            memory: "500M"
+            cpu: "50m"
         ports:
-        - containerPort: 3306
-          name: mysql
-        volumeMounts:
-        - name: coordinator-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: coordinator-persistent-storage
-        persistentVolumeClaim:
-          claimName: coordinator-pv-claim
+        - containerPort: 8080
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mstk-coordinator
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: mstk-coordinator

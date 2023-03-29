@@ -62,7 +62,7 @@ func createCoordinatorRequest(method string, endpoint string) (*http.Request, er
 		return nil, errors.New("coordinator offline")
 	}
 
-	return http.NewRequest(method, fmt.Sprintf("http://coordinator:8080/%s", endpoint), nil)
+	return http.NewRequest(method, fmt.Sprintf("http://mstk-coordinator:8080/%s", endpoint), nil)
 }
 
 /*

@@ -71,7 +71,7 @@ func SetupServicesRoutes(r *gin.Engine) {
 
 func getServiceIdFromName(name string) uint {
 	var s Service
-	result := db.Where("name = ?", name).First(&s)
+	result := dbConn.DB.Where("name = ?", name).First(&s)
 	if result.Error != nil || result.RowsAffected == 0 {
 		log.Println(result.Error)
 		return 0
@@ -82,7 +82,7 @@ func getServiceIdFromName(name string) uint {
 
 func getServicesList(c *gin.Context) {
 	var services []Service
-	result := db.Find(&services)
+	result := dbConn.DB.Find(&services)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -95,7 +95,7 @@ func getServicesList(c *gin.Context) {
 
 func getServicesListExpanded(c *gin.Context) {
 	var services []Service
-	result := db.Preload("Endpoints").Preload("Shards").Find(&services)
+	result := dbConn.DB.Preload("Endpoints").Preload("Shards").Find(&services)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -110,7 +110,7 @@ func getServiceEndpoints(c *gin.Context) {
 	var s Service
 
 	serviceName := c.Query("service")
-	result := db.Where("name = ?", serviceName).Preload("Endpoints").First(&s)
+	result := dbConn.DB.Where("name = ?", serviceName).Preload("Endpoints").First(&s)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -130,7 +130,7 @@ func getServiceShards(c *gin.Context) {
 	var s Service
 
 	serviceName := c.Query("service")
-	result := db.Where("name = ?", serviceName).Preload("Shards").First(&s)
+	result := dbConn.DB.Where("name = ?", serviceName).Preload("Shards").First(&s)
 
 	if result.Error != nil {
 		log.Println(result.Error)
@@ -166,7 +166,7 @@ func registerService(c *gin.Context) {
 	s.Endpoints = input.Endpoints
 	s.Shards = input.Shards
 
-	err := db.Create(&s).Error
+	err := dbConn.DB.Create(&s).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -195,7 +195,7 @@ func registerEndpoint(c *gin.Context) {
 	e.Name = input.Name
 	e.ServiceID = getServiceIdFromName(serviceName)
 
-	err := db.Create(&e).Error
+	err := dbConn.DB.Create(&e).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -229,7 +229,7 @@ func registerShard(c *gin.Context) {
 	s.State = input.State
 	s.ServiceID = getServiceIdFromName(serviceName)
 
-	err := db.Create(&s).Error
+	err := dbConn.DB.Create(&s).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}

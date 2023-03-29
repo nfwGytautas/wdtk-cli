@@ -1,4 +1,7 @@
 {
+    "gopls": {
+        "ui.semanticTokens": true
+    },
     "cSpell.words": [
         "mstk"
     ]

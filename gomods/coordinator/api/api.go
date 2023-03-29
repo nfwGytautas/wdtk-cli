@@ -3,12 +3,12 @@ package api
 import (
 	"log"
 
-	"gorm.io/driver/mysql"
+	"github.com/nfwGytautas/mstk/gomods/common-api"
 	"gorm.io/gorm"
 )
 
 // Database
-var db *gorm.DB
+var dbConn common.DatabaseConnection
 
 // ========================================================================
 // PUBLIC
@@ -18,18 +18,16 @@ var db *gorm.DB
 Sets up the api package
 */
 func Setup() {
-	var err error
-
 	log.Println("Preparing API package")
 
 	// Open connection
-	db, err = gorm.Open(mysql.Open(dcs), &gorm.Config{})
-	if err != nil {
-		log.Panic(err)
-	}
-
-	// Setup table migration
-	db.AutoMigrate(&Service{}, &Endpoint{}, &Shard{})
+	dbConn = common.DatabaseConnection{}
+	dbConn.Initialize(common.DatabaseConnectionConfig{
+		DCS: dcs,
+		MigrateCallback: func(d *gorm.DB) {
+			d.AutoMigrate(&Service{}, &Endpoint{}, &Shard{})
+		},
+	})
 
 	log.Println("API package ready")
 }
@@ -38,4 +36,4 @@ func Setup() {
 // PRIVATE
 // ========================================================================
 
-const dcs = "mstk:mstk123@tcp(auth_db:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local"
+const dcs = "mstk:mstk123@tcp(coordinator-db:3306)/coordinator_db?charset=utf8mb4&parseTime=True&loc=Local"
