@@ -10,93 +10,24 @@
             ]
         },
         {
-            "label": "[Minikube] Push",
+            "label": "[MSTK] Setup",
             "type": "shell",
-            "command": "./push-minikube.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/kubes/scripts/"
-            },
-            "dependsOn": [
-                "Push All"
-            ]
-        },
-        {
-            "label": "Push All",
-            "type": "shell",
-            "command": "python3",
-            "dependsOn": [
-                "Build All"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/bin"
-            },
+            "command": "go",
             "args": [
-                "build.py",
-                "push"
+                "run",
+                "./cli",
+                "setup",
             ]
         },
         {
-            "label": "Build All",
+            "label": "[MSTK] Clean",
             "type": "shell",
-            "command": "python3",
-            "dependsOn": [
-                "Clean All"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/bin"
-            },
+            "command": "go",
             "args": [
-                "build.py",
-                "build"
+                "run",
+                "./cli",
+                "clean",
             ]
-        },
-        {
-            "label": "Clean All",
-            "type": "shell",
-            "command": "python3",
-            "options": {
-                "cwd": "${workspaceFolder}/bin"
-            },
-            "args": [
-                "build.py",
-                "clean"
-            ]
-        },
-        {
-            "label": "[K8S] Teardown",
-            "type": "shell",
-            "command": "./teardown.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/kubes/"
-            },
-        },
-        {
-            "label": "[K8S] Setup",
-            "type": "shell",
-            "command": "./setup.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/kubes/"
-            },
-            "dependsOn": [
-                "[K8S] Teardown"
-            ]
-        },
-        {
-            "label": "[MSTK] Start",
-            "type": "shell",
-            "dependsOn": [
-                "[Minikube] Push",
-                "[K8S] Setup"
-            ],
-            "dependsOrder": "sequence"
-        },
-        {
-            "label": "[MSTK] Test",
-            "type": "shell",
-            "command": "./build.sh",
-            "options": {
-                "cwd": "${workspaceFolder}/example/"
-            }
-        },
+        }
     ]
 }

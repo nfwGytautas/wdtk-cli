@@ -2,6 +2,8 @@
 design/*.drawio.bkp
 design/*.drawio.dtmp
 
+cli/mstk
+
 example/balancer/balancer
 example/calculator/calculator
 
