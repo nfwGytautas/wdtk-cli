@@ -12,3 +12,6 @@ bin/*
 !bin/build.py
 !bin/Dockerfile.build
 !bin/Dockerfile.template
+
+# Remove MacOs specific files
+.DS_Store
