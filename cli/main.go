@@ -17,6 +17,7 @@ func main() {
 		Name:  "mstk",
 		Usage: "CLI for MSTK",
 		Commands: []cli.Command{
+			// MSTK
 			{
 				Flags:  target.SetupFlags,
 				Name:   "setup",
@@ -27,6 +28,23 @@ func main() {
 				Name:   "clean",
 				Usage:  "Clean mstk (deletes bin/ folder as well as cleans up kubectl)",
 				Action: target.CleanActionMstk,
+			},
+
+			// User
+			{
+				Name:   "template",
+				Usage:  "Generate a template project",
+				Action: target.TemplateAction,
+			},
+			{
+				Name:   "service",
+				Usage:  "Create a new service for mstk project",
+				Action: target.CreateServiceAction,
+			},
+			{
+				Name:   "deploy",
+				Usage:  "Deploy your mstk project to kubernetes",
+				Action: target.DeployAction,
 			},
 		},
 	}
