@@ -37,14 +37,30 @@ func main() {
 				Action: target.TemplateAction,
 			},
 			{
-				Name:   "service",
-				Usage:  "Create a new service for mstk project",
-				Action: target.CreateServiceAction,
+				Name:  "service",
+				Usage: "Create a new service for mstk project",
+				Subcommands: []cli.Command{
+					{
+						Name:   "add",
+						Usage:  "Add a new service to the current project",
+						Action: target.CreateServiceAction,
+					},
+					{
+						Name:   "remove",
+						Usage:  "Remove a service from the current project",
+						Action: target.RemoveServiceAction,
+					},
+				},
 			},
 			{
 				Name:   "deploy",
 				Usage:  "Deploy your mstk project to kubernetes",
 				Action: target.DeployAction,
+			},
+			{
+				Name:   "teardown",
+				Usage:  "Teardown your mstk project to kubernetes",
+				Action: target.TeardownAction,
 			},
 		},
 	}

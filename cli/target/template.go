@@ -54,8 +54,7 @@ func TemplateAction(cli *cli.Context) {
 		return
 	}
 
-	// Create go.work
-	writeGoWork(projectName)
+	// Create project config
 	writeProjectToml(projectName, packageName)
 
 	// TODO: Basic react environment
@@ -66,16 +65,6 @@ func TemplateAction(cli *cli.Context) {
 // ========================================================================
 // PRIVATE
 // ========================================================================
-
-/*
-Writes a template go.work file
-*/
-func writeGoWork(projectName string) {
-	log.Println("Writing go.work")
-
-	gw := project.GoWorkConfig{}
-	gw.Write()
-}
 
 /*
 Writes a template mstk_project.toml

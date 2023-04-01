@@ -9,6 +9,3 @@ TODO: Testing
 
 TODO: Performance
     TODO: Move migration to MSTK-Admin to make request speeds much faster
-
-TODO: Usability
-    TODO: Scripts for automatically exporting balancers, services for the user

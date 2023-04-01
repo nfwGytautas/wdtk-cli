@@ -10,6 +10,20 @@
             ]
         },
         {
+            "label": "[MSTK] Build",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "build",
+                "-o",
+                "mstk",
+                "*.go",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/cli/"
+            }
+        },
+        {
             "label": "[MSTK] Setup",
             "type": "shell",
             "command": "go",

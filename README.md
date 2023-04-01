@@ -23,7 +23,7 @@ First you need a MSTK project which you can scaffold using
 mstk template <package> <project>
 ```
 
-The ```<package>``` keyword is the url to your project (the string that will be written in go.mod files)
+The ```<package>``` keyword is the url to your project (the string that will be written in go.mod files) e.g. 'github.com/nfwGytautas/mstk/'
 
 This will create a MSTK template project with the name
 ```<project>``` whose tree structure looks like this:
@@ -39,24 +39,32 @@ This will create a MSTK template project with the name
 Now to create a service you can run the CLI command
 
 ```
-mstk service <name>
+mstk service add <name>
 ```
 
-This command wil automatically create a service and a load balancer directory for you and modify the necessary files to make it work seamlessly. Altho this can be done by hand using the mstk CLI is more convenient. After running the command you should have something like
+This command wil automatically create a service and a load balancer directory for you and modify the necessary files to make it work seamlessly. Altho this can be done by hand using the mstk CLI is more convenient. After running the command you should have something like.
 
 ```
 .
 ├── go.work
 ├── mstk_project.toml
 └── services
-    └── name_of_service
-        ├── Service.toml
+    └── calculator
         ├── balancer
         │   ├── go.mod
         │   └── main.go
+        ├── deployment-calculator.yml
         └── service
             ├── go.mod
             └── main.go
+```
+
+You can modify deployment-\<service\>.yml by hand to customize the deployment of the service and balancer
+
+A service can be deleted with the command (this is the recommended way, otherwise you will have to remove various entries by hand)
+
+```
+mstk service remove <name>
 ```
 
 
@@ -75,7 +83,9 @@ Alternatively you can use
 mstk deploy <service>
 ```
 
-To deploy a specific service
+To deploy a specific service.
+
+To teardown services the command is the same just replace `deploy` with `teardown`
 
 ### Shutdown
 Once you are done you can shutdown mstk using

@@ -7,11 +7,10 @@ cli/mstk
 example/balancer/balancer
 example/calculator/calculator
 
+template/
+
 # Ignore everything except the utility script and template dockerfile
-bin/*
-!bin/build.py
-!bin/Dockerfile.build
-!bin/Dockerfile.template
+bin
 
 # Remove MacOs specific files
 .DS_Store
