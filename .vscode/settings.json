@@ -3,6 +3,7 @@
         "ui.semanticTokens": true
     },
     "cSpell.words": [
+        "GORM",
         "mstk"
     ]
 }

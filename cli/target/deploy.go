@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/nfwGytautas/mstk/cli/project"
@@ -27,7 +28,16 @@ func DeployAction(ctx *cli.Context) {
 	pc := project.ProjectConfig{}
 	pc.Read()
 
+	// Teardown first
+	TeardownAction(ctx)
+
 	if serviceName == "" {
+		// Apply secret
+		applyKubectl(fmt.Sprintf("%s-secret.yml", pc.Project))
+
+		// Rolling restart for the gateway
+		restartKubernetes()
+
 		// All services
 		for _, service := range pc.Services {
 			// TODO: Goroutines
@@ -99,4 +109,21 @@ func deployService(service string, pc *project.ProjectConfig) {
 
 	// Apply kubectl
 	applyKubectl(serviceRoot)
+}
+
+/*
+Executes a rolling restart
+*/
+func restartKubernetes() {
+	defer TimeFn("Restart")()
+
+	applyCmd := exec.Command(
+		"kubectl", "rollout", "restart",
+	)
+	log.Printf("Running %s", applyCmd.String())
+
+	err := applyCmd.Run()
+	if err != nil {
+		log.Panic(err)
+	}
 }

@@ -75,20 +75,12 @@ func TimeFn(name string) func() {
 Returns a list of services in mstk
 */
 func GetMstkServicesList() []string {
-	directories, err := GetDirectories("gomods/")
+	directories, err := GetDirectories("gomods/services/")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	// Filter out only services
-	var services []string
-	for _, dir := range directories {
-		if !strings.HasSuffix(dir, "-api") {
-			services = append(services, dir)
-		}
-	}
-
-	return services
+	return directories
 }
 
 // ========================================================================

@@ -236,6 +236,12 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+		env:
+        - name: API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: Secret
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -263,6 +269,12 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+		env:
+        - name: API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: Secret
 ---
 apiVersion: v1
 kind: Service

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mstk-gateway
+  name: mstk-locator
 spec:
   selector:
     matchLabels:
-      app: mstk-gateway
+      app: mstk-locator
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: mstk-gateway
+        app: mstk-locator
     spec:
       containers:
-      - image: mstk/gateway:0.0.0
-        name: mstk-gateway
+      - image: mstk/locator:0.0.0
+        name: mstk-locator
         imagePullPolicy: Never
         resources:
           limits:
@@ -30,30 +30,14 @@ spec:
             secretKeyRef:
               name: mstk-project-secret
               key: Secret
-        - name: MSTK_USER
-          valueFrom:
-            secretKeyRef:
-              name: mstk-project-secret
-              key: MstkUser
-        - name: MSTK_PSW
-          valueFrom:
-            secretKeyRef:
-              name: mstk-project-secret
-              key: MstkPsw
-        - name: TOKEN_LIFESPAN
-          valueFrom:
-            secretKeyRef:
-              name: mstk-project-secret
-              key: Lifespan
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mstk-gateway
+  name: mstk-locator
 spec:
   ports:
     - port: 8080
       targetPort: 8080
   selector:
-    app: mstk-gateway
-  type: LoadBalancer
+    app: mstk-locator

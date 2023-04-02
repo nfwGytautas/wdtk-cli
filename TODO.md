@@ -9,3 +9,8 @@ TODO: Testing
 
 TODO: Performance
     TODO: Move migration to MSTK-Admin to make request speeds much faster
+
+TODO: Security
+    TODO: Pass JWT Tokens to microservices
+
+TODO: Update readme

@@ -72,7 +72,7 @@ func compileService(path string, wg *sync.WaitGroup) {
 
 	serviceName := filepath.Base(path)
 	targetFile := fmt.Sprintf("./bin/%s", serviceName)
-	sourceDir := fmt.Sprintf("./gomods/%s/", serviceName)
+	sourceDir := fmt.Sprintf("./gomods/services/%s/", serviceName)
 
 	// Build sources
 	buildSourcesForDocker(targetFile, sourceDir)

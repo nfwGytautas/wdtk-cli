@@ -1,6 +1,9 @@
 package target
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
 	"log"
 	"os"
 
@@ -56,8 +59,9 @@ func TemplateAction(cli *cli.Context) {
 
 	// Create project config
 	writeProjectToml(projectName, packageName)
+	writeSecret(projectName)
 
-	// TODO: Basic react environment
+	// TODO: Basic flutter environment
 
 	log.Println("Done.")
 }
@@ -65,6 +69,22 @@ func TemplateAction(cli *cli.Context) {
 // ========================================================================
 // PRIVATE
 // ========================================================================
+
+/*
+Template for service main function
+*/
+const templateSecret = `
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mstk-project-secret # DO NOT CHANGE THIS
+type: kubernetes.io/basic-auth
+stringData:
+  MstkUser: USER
+  MstkPsw: PSW
+  Secret: API_SECRET_KEY
+  Lifespan: 60
+`
 
 /*
 Writes a template mstk_project.toml
@@ -76,4 +96,39 @@ func writeProjectToml(projectName, packageName string) {
 	pc.Project = projectName
 	pc.PackageLocation = packageName + projectName + "/services/"
 	pc.Write()
+}
+
+/*
+Write a template secret file for kubernetes
+*/
+func writeSecret(projectName string) {
+	var templateData struct {
+		Project string
+	}
+
+	templateData.Project = projectName
+
+	template, err := template.New("secret").Parse(templateSecret)
+	if err != nil {
+		log.Println("Failed to create a secret template")
+		panic(50)
+	}
+
+	buf := &bytes.Buffer{}
+	err = template.Execute(buf, templateData)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	file, err := os.Create(fmt.Sprintf("%s-secret.yml", projectName))
+	if err != nil {
+		log.Panic(err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(buf.Bytes())
+	if err != nil {
+		log.Panic(err)
+	}
+	file.Sync()
 }
