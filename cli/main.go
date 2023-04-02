@@ -37,6 +37,11 @@ func main() {
 				Action: target.TemplateAction,
 			},
 			{
+				Name:   "delete",
+				Usage:  "Delete project in the current dir",
+				Action: target.DeleteAction,
+			},
+			{
 				Name:  "service",
 				Usage: "Create a new service for mstk project",
 				Subcommands: []cli.Command{
@@ -59,7 +64,7 @@ func main() {
 			},
 			{
 				Name:   "teardown",
-				Usage:  "Teardown your mstk project to kubernetes",
+				Usage:  "Teardown your mstk project from kubernetes",
 				Action: target.TeardownAction,
 			},
 		},

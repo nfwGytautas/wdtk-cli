@@ -9,9 +9,11 @@ Run these commands to setup MSTK on your local machine (kubectl via minikube nee
 ```
 git clone github.com/nfwGytautas/mstk
 cd cli
-go build -o mstk *.go
+go build -i -o mstk *.go
 mstk setup
 ```
+
+The command will create a mstk directory in the current users home directory.
 
 ### User startup
 
@@ -30,10 +32,10 @@ This will create a MSTK template project with the name
 
 ```
 .
-├── balancers
 ├── go.work
 ├── mstk_project.toml
-└── services
+├── services
+└── template-secret.yml
 ```
 
 Now to create a service you can run the CLI command
@@ -87,20 +89,19 @@ To deploy a specific service.
 
 To teardown services the command is the same just replace `deploy` with `teardown`
 
-### Shutdown
-Once you are done you can shutdown mstk using
+### Delete project
+
+To delete a project in your project directory run
+
+```
+mstk delete
+```
+
+### Clean
+Once you are done you can clean/remove mstk using
 
 ```
 mstk clean
 ```
 
-This command will cleanup all mstk related kubernetes pods aswell as any other artifacts of the setup command
-
-
-## Project structure
-
-```
-.
-├── README.md
-└── gomods      - Directory containing the modules in go
-```
+This command will delete the mstk directory inside the user home directory after which you can delete the mstk command

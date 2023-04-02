@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/nfwGytautas/mstk/cli/project"
@@ -34,6 +33,7 @@ func DeployAction(ctx *cli.Context) {
 	if serviceName == "" {
 		// Apply secret
 		applyKubectl(fmt.Sprintf("%s-secret.yml", pc.Project), pc.Project)
+		applyMstkK8s(pc.Project)
 
 		// All services
 		for _, service := range pc.Services {
@@ -106,21 +106,4 @@ func deployService(service string, pc *project.ProjectConfig) {
 
 	// Apply kubectl
 	applyKubectl(serviceRoot, pc.Project)
-}
-
-/*
-Executes a rolling restart
-*/
-func restartKubernetes() {
-	defer TimeFn("Restart")()
-
-	applyCmd := exec.Command(
-		"kubectl", "rollout", "restart",
-	)
-	log.Printf("Running %s", applyCmd.String())
-
-	err := applyCmd.Run()
-	if err != nil {
-		log.Panic(err)
-	}
 }

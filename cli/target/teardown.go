@@ -3,6 +3,7 @@ package target
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -27,6 +28,8 @@ func TeardownAction(ctx *cli.Context) {
 	pc.Read()
 
 	if serviceName == "" {
+		teardownMstkK8s(pc.Project)
+
 		// All services
 		for _, service := range pc.Services {
 			// TODO: Goroutines
@@ -65,10 +68,39 @@ func teardownService(service string, pc *project.ProjectConfig) {
 
 	serviceRoot := fmt.Sprintf("./services/%s/", service)
 
-	cleanupCmd := exec.Command("kubectl", "delete", "-f", serviceRoot)
+	cleanupCmd := exec.Command("kubectl", "delete", "-f", serviceRoot, "-n", pc.Project)
 	log.Printf("Running %s", cleanupCmd.String())
 
 	_, err := cleanupCmd.Output()
+	if err != nil {
+		// Not found is not an actual error, just it doesn't exist which is fine since we are cleaning up anyway
+		if !strings.Contains(
+			string((err.(*exec.ExitError).Stderr)),
+			"not found",
+		) {
+			log.Println(string((err.(*exec.ExitError).Stderr)))
+			log.Panic(err)
+		}
+	}
+}
+
+/*
+Teardown mstk services
+*/
+func teardownMstkK8s(namespace string) {
+	defer TimeFn("Cleaning mstk k8s")()
+
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Creating in %s", dirname)
+	baseDir := dirname + "/mstk/k8s/"
+
+	cleanupCmd := exec.Command("kubectl", "delete", "-f", baseDir, "-n", namespace)
+	log.Printf("Running %s", cleanupCmd.String())
+
+	_, err = cleanupCmd.Output()
 	if err != nil {
 		// Not found is not an actual error, just it doesn't exist which is fine since we are cleaning up anyway
 		if !strings.Contains(

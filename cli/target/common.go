@@ -348,3 +348,34 @@ fileLoop:
 		}
 	}
 }
+
+/*
+Apply all mstk kubernetes files to the namespace
+*/
+func applyMstkK8s(projectName string) {
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Creating in %s", dirname)
+	baseDir := dirname + "/mstk/k8s/"
+
+	applyKubectl(baseDir, projectName)
+}
+
+/*
+Executes a rolling restart for a namespace
+*/
+func restartKubernetes(namespace string) {
+	defer TimeFn("Restart")()
+
+	applyCmd := exec.Command(
+		"kubectl", "rollout", "restart", "deployment", "-n", namespace,
+	)
+	log.Printf("Running %s", applyCmd.String())
+
+	err := applyCmd.Run()
+	if err != nil {
+		log.Panic(err)
+	}
+}
