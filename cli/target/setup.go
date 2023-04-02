@@ -29,13 +29,22 @@ Execute setup target
 */
 func SetupAction(ctx *cli.Context) {
 	defer TimeFn("Setup")()
+	EnsureMSTKRoot()
 	// TODO: Find the MSTK installation path automatically
 
 	log.Println("Running setup")
-	EnsureMSTKRoot()
 
-	log.Println("Creating bin")
-	os.Mkdir("bin/", os.ModePerm)
+	log.Println("Creating mstk directory")
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Creating in %s", dirname)
+	baseDir := dirname + "/mstk/"
+	os.Mkdir(baseDir, os.ModePerm)
+	os.Mkdir(baseDir+"bin", os.ModePerm)
+	os.Mkdir(baseDir+"docker", os.ModePerm)
+	os.Mkdir(baseDir+"k8s", os.ModePerm)
 
 	log.Println("Compiling services")
 	services := GetMstkServicesList()
@@ -49,7 +58,9 @@ func SetupAction(ctx *cli.Context) {
 	}
 	wg.Wait()
 
-	log.Println("Setup done, your minikube environment should have mstk microservices up and running")
+	copyDir("kubes/", baseDir+"k8s/", []string{".md"})
+
+	log.Println("Setup done you can now create a template project using 'mstk template' command")
 }
 
 // ========================================================================
@@ -70,24 +81,28 @@ func compileService(path string, wg *sync.WaitGroup) {
 
 	log.Printf("Compiling %s", path)
 
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	base := fmt.Sprintf("%s/mstk/", dirname)
 	serviceName := filepath.Base(path)
-	targetFile := fmt.Sprintf("./bin/%s", serviceName)
+	targetFile := fmt.Sprintf("%sbin/%s", base, serviceName)
 	sourceDir := fmt.Sprintf("./gomods/services/%s/", serviceName)
 
 	// Build sources
 	buildSourcesForDocker(targetFile, sourceDir)
 
 	// Generate docker files
-	writeDockerFile("./bin", serviceName)
+	writeDockerFile(base, serviceName)
 
 	// Push to minikube
 	cfg := setupServiceCfg{
 		tag:        "mstk/",
 		name:       serviceName,
-		dockerPath: "./bin/Dockerfile." + serviceName,
+		dockerPath: base + "docker/Dockerfile." + serviceName,
+		runDir:     base,
 	}
 	setupService(cfg)
-
-	// Apply kubectl commands
-	applyKubectl("kubes/" + serviceName)
 }

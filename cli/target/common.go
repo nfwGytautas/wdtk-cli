@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -94,22 +95,58 @@ type setupServiceCfg struct {
 	tag        string
 	name       string
 	dockerPath string
+	runDir     string
 }
 
 /*
 Apply kubectl command
 */
-func applyKubectl(file string) {
+func applyKubectl(file, namespace string) {
 	defer TimeFn(fmt.Sprintf("Deploy %s", file))()
 
 	applyCmd := exec.Command(
-		"kubectl", "apply", "-f", file,
+		"kubectl", "apply", "-f", file, "-n", namespace,
 	)
 	log.Println("Applying to kubernetes")
 	log.Printf("Running %s", applyCmd.String())
 
 	err := applyCmd.Run()
 	if err != nil {
+		log.Println(err.Error())
+		log.Panic(err)
+	}
+}
+
+/*
+Create a namespace in k8s
+*/
+func createNamespace(namespace string) {
+	createCmd := exec.Command(
+		"kubectl", "create", "namespace", namespace,
+	)
+	log.Println("Applying to kubernetes")
+	log.Printf("Running %s", createCmd.String())
+
+	err := createCmd.Run()
+	if err != nil {
+		log.Println(err.Error())
+		log.Panic(err)
+	}
+}
+
+/*
+Delete a namespace in k8s
+*/
+func deleteNamespace(namespace string) {
+	deleteCmd := exec.Command(
+		"kubectl", "delete", "namespace", namespace,
+	)
+	log.Println("Applying to kubernetes")
+	log.Printf("Running %s", deleteCmd.String())
+
+	err := deleteCmd.Run()
+	if err != nil {
+		log.Println(err.Error())
 		log.Panic(err)
 	}
 }
@@ -156,7 +193,7 @@ FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY {{.BinDir}}/{{.Package}} /{{.Package}}
+COPY ./bin/{{.Package}} /{{.Package}}
 
 EXPOSE 8080
 
@@ -175,7 +212,7 @@ ENTRYPOINT ["/{{.Package}}"]
 		log.Panic(err)
 	}
 
-	file, err := os.Create(fmt.Sprintf("%s/Dockerfile.%s", path, service))
+	file, err := os.Create(fmt.Sprintf("%sdocker/Dockerfile.%s", path, service))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -202,6 +239,7 @@ func setupService(cfg setupServiceCfg) {
 		".",
 	)
 	inMinikube(buildCmd)
+	buildCmd.Dir = cfg.runDir
 
 	// TODO: Better error checking
 	log.Printf("Building '%s'", cfg.name)
@@ -218,6 +256,7 @@ func setupService(cfg setupServiceCfg) {
 		fmt.Sprintf("%s:%s", cfg.name, version),
 	)
 	inMinikube(pushCmd)
+	pushCmd.Dir = cfg.runDir
 
 	log.Printf("Pushing '%s'", cfg.name)
 	log.Printf("Running %s", buildCmd.String())
@@ -259,6 +298,53 @@ func inMinikube(cmd *exec.Cmd) {
 			arg := strings.Trim(split[1], "\"")
 
 			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", split[0], arg))
+		}
+	}
+}
+
+/*
+Copies all files from one directory to another
+*/
+func copyDir(from, to string, ignoreExtensions []string) {
+	f, err := os.Open(from)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	fileInfo, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	log.Printf("Copying directory '%s' to '%s'", from, to)
+
+fileLoop:
+	for _, file := range fileInfo {
+		if file.IsDir() {
+			// TODO: No symlinks etc.
+			os.Mkdir(to+file.Name(), os.ModePerm)
+			copyDir(from+file.Name(), to+file.Name(), ignoreExtensions)
+		} else {
+			for _, ext := range ignoreExtensions {
+				if ext == filepath.Ext(file.Name()) {
+					continue fileLoop
+				}
+			}
+
+			log.Printf("\t%s", file.Name())
+
+			// Read all content of src to data, may cause OOM for a large file.
+			data, err := os.ReadFile(from + file.Name())
+			if err != nil {
+				log.Panic(err)
+			}
+
+			// Write data to dst
+			err = os.WriteFile(to+file.Name(), data, fs.ModePerm)
+			if err != nil {
+				log.Panic(err)
+			}
 		}
 	}
 }

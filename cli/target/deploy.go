@@ -33,10 +33,7 @@ func DeployAction(ctx *cli.Context) {
 
 	if serviceName == "" {
 		// Apply secret
-		applyKubectl(fmt.Sprintf("%s-secret.yml", pc.Project))
-
-		// Rolling restart for the gateway
-		restartKubernetes()
+		applyKubectl(fmt.Sprintf("%s-secret.yml", pc.Project), pc.Project)
 
 		// All services
 		for _, service := range pc.Services {
@@ -108,7 +105,7 @@ func deployService(service string, pc *project.ProjectConfig) {
 	setupService(serviceCfg)
 
 	// Apply kubectl
-	applyKubectl(serviceRoot)
+	applyKubectl(serviceRoot, pc.Project)
 }
 
 /*

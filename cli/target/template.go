@@ -57,6 +57,9 @@ func TemplateAction(cli *cli.Context) {
 		return
 	}
 
+	log.Println("Creating k8s namespace")
+	createNamespace(projectName)
+
 	// Create project config
 	writeProjectToml(projectName, packageName)
 	writeSecret(projectName)
@@ -78,12 +81,12 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: mstk-project-secret # DO NOT CHANGE THIS
-type: kubernetes.io/basic-auth
+type: kubernetes.io/Opaque
 stringData:
   MstkUser: USER
   MstkPsw: PSW
   Secret: API_SECRET_KEY
-  Lifespan: 60
+  Lifespan: "60"
 `
 
 /*
