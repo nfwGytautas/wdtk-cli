@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
 	"github.com/urfave/cli"
 )
@@ -19,50 +20,44 @@ import (
 Action to run on template target
 */
 func TemplateAction(cli *cli.Context) {
-	defer TimeFn("Generating template")()
+	defer common.TimeCurrentFn()
 
 	packageName := cli.Args().Get(0)
 	projectName := cli.Args().Get(1)
 
 	if projectName == "" {
-		log.Println("Empty project name. Aborting")
-		return
+		common.LogPanic("Project name not provided")
 	}
 
 	if packageName == "" {
-		log.Println("Empty package name. Aborting")
-		return
+		common.LogPanic("Package name not provided")
 	}
 
 	log.Printf("Generating template project '%s'", projectName)
 
 	// Create project root
-	err := os.Mkdir(projectName, os.ModePerm)
-	if err != nil {
-		log.Printf("Directory with the name of '%s' already exists", projectName)
-		return
-	}
+	common.PanicOnError(os.Mkdir(projectName, os.ModePerm), "Failed to create project root directory")
 
 	// Create subdirectories
-	err = os.Mkdir(projectName+"/services", os.ModePerm)
-	if err != nil {
-		log.Printf("Failed to create services directory %v", err.Error())
-		return
-	}
+	common.PanicOnError(os.Mkdir(projectName+"/services", os.ModePerm), "Failed to create services directory inside project root")
+	common.PanicOnError(os.Mkdir(projectName+"/bin", os.ModePerm), "Failed to create bin directory inside project root")
+	common.PanicOnError(os.Mkdir(projectName+"/k8s", os.ModePerm), "Failed to create k8s directory inside project root")
+	common.PanicOnError(os.Mkdir(projectName+"/docker", os.ModePerm), "Failed to create docker directory inside project root")
 
 	// CD to the new directory
-	err = os.Chdir(projectName)
-	if err != nil {
-		log.Printf("Failed to cd into project folder %v", err.Error())
-		return
-	}
+	common.PanicOnError(os.Chdir(projectName), "Failed to cd into project root")
+
+	// Write project toml
+	writeProjectToml(projectName, packageName)
+
+	pc := project.ProjectConfig{}
+	pc.Read()
 
 	log.Println("Creating k8s namespace")
-	createNamespace(projectName)
+	pc.Kubernetes.CreateNamespace()
 
 	// Create project config
-	writeProjectToml(projectName, packageName)
-	writeSecret(projectName)
+	common.PanicOnError(writeSecret(projectName), "Failed to write secret file")
 
 	// TODO: Basic flutter environment
 
@@ -96,15 +91,15 @@ func writeProjectToml(projectName, packageName string) {
 	log.Println("Writing mstk_project.toml")
 
 	pc := project.ProjectConfig{}
-	pc.Project = projectName
-	pc.PackageLocation = packageName + projectName + "/services/"
+	pc.PSD.Project = projectName
+	pc.PSD.PackageLocation = packageName + projectName + "/services/"
 	pc.Write()
 }
 
 /*
 Write a template secret file for kubernetes
 */
-func writeSecret(projectName string) {
+func writeSecret(projectName string) error {
 	var templateData struct {
 		Project string
 	}
@@ -113,25 +108,26 @@ func writeSecret(projectName string) {
 
 	template, err := template.New("secret").Parse(templateSecret)
 	if err != nil {
-		log.Println("Failed to create a secret template")
-		panic(50)
+		return err
 	}
 
 	buf := &bytes.Buffer{}
 	err = template.Execute(buf, templateData)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	file, err := os.Create(fmt.Sprintf("%s-secret.yml", projectName))
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(buf.Bytes())
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 	file.Sync()
+
+	return nil
 }

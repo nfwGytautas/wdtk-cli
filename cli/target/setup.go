@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/nfwGytautas/mstk/cli/api"
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/urfave/cli"
 )
 
@@ -28,23 +30,26 @@ var SetupFlags = []cli.Flag{
 Execute setup target
 */
 func SetupAction(ctx *cli.Context) {
-	defer TimeFn("Setup")()
-	EnsureMSTKRoot()
+	defer common.TimeCurrentFn()
+
+	if !common.IsMSTKRoot() {
+		common.LogPanic("setup needs to be ran inside a mstk root directory")
+	}
 	// TODO: Find the MSTK installation path automatically
 
 	log.Println("Running setup")
 
 	log.Println("Creating mstk directory")
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Creating in %s", dirname)
-	baseDir := dirname + "/mstk/"
-	os.Mkdir(baseDir, os.ModePerm)
-	os.Mkdir(baseDir+"bin", os.ModePerm)
-	os.Mkdir(baseDir+"docker", os.ModePerm)
-	os.Mkdir(baseDir+"k8s", os.ModePerm)
+
+	baseDir, err := common.GetMSTKDir()
+	common.PanicOnError(err, "Failed to get MSTK root directory")
+
+	log.Printf("Creating %s", baseDir)
+
+	common.PanicOnError(os.Mkdir(baseDir, os.ModePerm), "Failed to create mstk root directory")
+	common.PanicOnError(os.Mkdir(baseDir+"bin", os.ModePerm), "Failed to create bin directory")
+	common.PanicOnError(os.Mkdir(baseDir+"docker", os.ModePerm), "Failed to create docker directory")
+	common.PanicOnError(os.Mkdir(baseDir+"k8s", os.ModePerm), "Failed to create k8s directory")
 
 	log.Println("Compiling services")
 	services := GetMstkServicesList()
@@ -58,7 +63,7 @@ func SetupAction(ctx *cli.Context) {
 	}
 	wg.Wait()
 
-	copyDir("kubes/", baseDir+"k8s/", []string{".md"})
+	common.CopyDir("kubes/", baseDir+"k8s/", []string{".md"})
 
 	log.Println("Setup done you can now create a template project using 'mstk template' command")
 }
@@ -68,41 +73,42 @@ func SetupAction(ctx *cli.Context) {
 // ========================================================================
 
 /*
-Version for images
+Returns a list of services in mstk
 */
-const version = "0.0.0"
+func GetMstkServicesList() []string {
+	directories, err := common.GetDirectories("gomods/services/")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return directories
+}
 
 /*
 Compiles a single service
 */
 func compileService(path string, wg *sync.WaitGroup) {
-	defer TimeFn(fmt.Sprintf("Preparing '%s'", path))()
+	defer common.TimeCurrentFn()
 	defer wg.Done()
 
 	log.Printf("Compiling %s", path)
 
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
+	mstkRoot, err := common.GetMSTKDir()
+	common.PanicOnError(err, "Failed to get mstk root directory")
 
-	base := fmt.Sprintf("%s/mstk/", dirname)
 	serviceName := filepath.Base(path)
-	targetFile := fmt.Sprintf("%sbin/%s", base, serviceName)
+	targetFile := fmt.Sprintf("%sbin/%s", mstkRoot, serviceName)
 	sourceDir := fmt.Sprintf("./gomods/services/%s/", serviceName)
 
+	builder := api.CreateBuilder()
+	docker := api.CreateDocker(mstkRoot, "mstk")
+
 	// Build sources
-	buildSourcesForDocker(targetFile, sourceDir)
+	common.PanicOnError(builder.Build(sourceDir, targetFile), "Failed to build")
 
 	// Generate docker files
-	writeDockerFile(base, serviceName)
+	common.PanicOnError(docker.WriteTemplate(serviceName, "bin/"), "Failed to create template")
 
 	// Push to minikube
-	cfg := setupServiceCfg{
-		tag:        "mstk/",
-		name:       serviceName,
-		dockerPath: base + "docker/Dockerfile." + serviceName,
-		runDir:     base,
-	}
-	setupService(cfg)
+	common.PanicOnError(docker.BuildAndPush(serviceName), "Failed to push image")
 }

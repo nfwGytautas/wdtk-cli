@@ -3,9 +3,9 @@ package target
 import (
 	"fmt"
 	"log"
-	"os"
-	"strings"
+	"sync"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
 	"github.com/urfave/cli"
 )
@@ -18,32 +18,35 @@ import (
 Action for deploy target
 */
 func DeployAction(ctx *cli.Context) {
-	defer TimeFn("Deploy")()
+	defer common.TimeCurrentFn()
 
 	log.Println("Deploying")
 
 	serviceName := ctx.Args().First()
 
 	pc := project.ProjectConfig{}
-	pc.Read()
+	err := pc.Read()
+	common.PanicOnError(err, "Failed to read mstk_project.toml")
 
 	// Teardown first
 	TeardownAction(ctx)
 
 	if serviceName == "" {
 		// Apply secret
-		applyKubectl(fmt.Sprintf("%s-secret.yml", pc.Project), pc.Project)
-		applyMstkK8s(pc.Project)
+		pc.Kubernetes.Apply(fmt.Sprintf("%s-secret.yml", pc.PSD.Project))
+		pc.Kubernetes.ApplyMSTK()
 
 		// All services
-		for _, service := range pc.Services {
-			// TODO: Goroutines
-			deployService(service.Name, &pc)
+		var wg sync.WaitGroup
+		wg.Add(len(pc.PSD.Services))
+		for _, service := range pc.PSD.Services {
+			go deployServiceMt(service.Name, &pc, &wg)
 		}
+		wg.Wait()
 	} else {
 		// Check if we have the service
 		found := false
-		for _, service := range pc.Services {
+		for _, service := range pc.PSD.Services {
 			if serviceName == service.Name {
 				found = true
 			}
@@ -57,6 +60,8 @@ func DeployAction(ctx *cli.Context) {
 			panic(50)
 		}
 	}
+
+	common.LogInfo("Done.")
 }
 
 // ========================================================================
@@ -64,46 +69,29 @@ func DeployAction(ctx *cli.Context) {
 // ========================================================================
 
 /*
+Multithreaded variant of deployService
+*/
+func deployServiceMt(service string, pc *project.ProjectConfig, wg *sync.WaitGroup) {
+	defer wg.Done()
+	deployService(service, pc)
+}
+
+/*
 Deploy a service to k8s
 */
 func deployService(service string, pc *project.ProjectConfig) {
-	log.Printf("Deploying %s", service)
+	common.LogTrace("Deploying %s", service)
 
 	serviceRoot := fmt.Sprintf("./services/%s/", service)
 
-	// Create bin directory
-	err := os.Mkdir(serviceRoot+"bin/", os.ModePerm)
-	if err != nil {
-		if !strings.Contains(err.Error(), "file exists") {
-			log.Printf("Failed to create bin folder %v", err.Error())
-			panic(60)
-		}
-	}
-
-	binDir := serviceRoot + "bin/"
-
 	// Build
-	buildSourcesForDocker(binDir+"balancer", serviceRoot+"balancer/")
-	buildSourcesForDocker(binDir+"service", serviceRoot+"balancer/")
-
-	// Docker
-	writeDockerFile(binDir, "balancer")
-	writeDockerFile(binDir, "service")
+	common.PanicOnError(pc.Builder.Build(serviceRoot+"balancer/", fmt.Sprintf("bin/%s-balancer", service)), "Failed to build balancer")
+	common.PanicOnError(pc.Builder.Build(serviceRoot+"service/", fmt.Sprintf("bin/%s-service", service)), "Failed to build service")
 
 	// Setup services
-	balancerCfg := setupServiceCfg{
-		tag:        pc.Project + "/",
-		name:       fmt.Sprintf("%s-balancer", service),
-		dockerPath: binDir + "Dockerfile.balancer",
-	}
-	serviceCfg := setupServiceCfg{
-		tag:        pc.Project + "/",
-		name:       fmt.Sprintf("%s-service", service),
-		dockerPath: binDir + "Dockerfile.service",
-	}
-	setupService(balancerCfg)
-	setupService(serviceCfg)
+	common.PanicOnError(pc.Docker.BuildAndPush(service+"-balancer"), "Failed to push balancer")
+	common.PanicOnError(pc.Docker.BuildAndPush(service+"-service"), "Failed to push service")
 
 	// Apply kubectl
-	applyKubectl(serviceRoot, pc.Project)
+	common.PanicOnError(pc.Kubernetes.Apply(fmt.Sprintf("k8s/deployment-%s.yml", service)), "Failed to apply deployment")
 }

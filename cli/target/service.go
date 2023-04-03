@@ -7,176 +7,16 @@ import (
 	"log"
 	"os"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
 	"github.com/urfave/cli"
 )
 
-// ========================================================================
-// PUBLIC
-// ========================================================================]
-
-/*
-Action for create service target
-*/
-func CreateServiceAction(ctx *cli.Context) {
-	defer TimeFn("Create service")()
-
-	serviceName := ctx.Args().First()
-	if serviceName == "" {
-		log.Println("Service name not given")
-		panic(50)
-	}
-
-	log.Printf("Creating service %s", serviceName)
-
-	pc := project.ProjectConfig{}
-	pc.Read()
-
-	// Create directory structure
-	serviceRoot := "services/" + serviceName + "/"
-	err := os.Mkdir(serviceRoot, os.ModePerm)
-	if err != nil {
-		log.Printf("Failed to create folder %v", err.Error())
-		panic(50)
-	}
-
-	err = os.Mkdir(serviceRoot+"balancer", os.ModePerm)
-	if err != nil {
-		log.Printf("Failed to create folder %v", err.Error())
-		panic(50)
-	}
-
-	err = os.Mkdir(serviceRoot+"service", os.ModePerm)
-	if err != nil {
-		log.Printf("Failed to create folder %v", err.Error())
-		panic(50)
-	}
-
-	// Write files
-	writeGoMod(serviceName+"/"+"balancer", &pc)
-	writeGoMod(serviceName+"/"+"service", &pc)
-
-	writeTemplateMain(serviceRoot+"balancer/", balancerTemplate)
-	writeTemplateMain(serviceRoot+"service/", serviceTemplate)
-
-	// Write k8s deployment yml file
-	writeK8S(serviceRoot, serviceName, pc.Project)
-
-	pc.Services = append(pc.Services, project.ServiceEntry{Name: serviceName})
-	pc.Write()
-
-	log.Println("Done.")
-}
-
-/*
-Action for remove service target
-*/
-func RemoveServiceAction(ctx *cli.Context) {
-	defer TimeFn("Remove service")()
-
-	serviceName := ctx.Args().First()
-	if serviceName == "" {
-		log.Println("Service not specified")
-		panic(50)
-	}
-
-	pc := project.ProjectConfig{}
-	pc.Read()
-
-	// Check if we have service in the project
-	for i, service := range pc.Services {
-		if service.Name == serviceName {
-			log.Println("Found... Deleting")
-
-			pc.Services[i] = pc.Services[len(pc.Services)-1]
-			pc.Services = pc.Services[:len(pc.Services)-1]
-
-			err := os.RemoveAll(fmt.Sprintf("services/%s/", serviceName))
-			if err != nil {
-				log.Printf("Failed to delete service folder %v", err.Error())
-				panic(51)
-			}
-
-			break
-		}
-	}
-
-	pc.Write()
-}
-
-// ========================================================================
-// PRIVATE
+// PUBLIC TYPES
 // ========================================================================
 
-/*
-Write a go.mod file in the directory
-*/
-func writeGoMod(path string, pc *project.ProjectConfig) {
-	f, err := os.OpenFile("services/"+path+"/go.mod", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Failed to create go.mod")
-		panic(50)
-	}
-
-	defer f.Close()
-
-	f.WriteString("module " + pc.PackageLocation + path)
-	f.WriteString("\n\n")
-
-	f.WriteString(pc.GoVersion)
-}
-
-/*
-Write a template main.go file in the directory
-*/
-func writeTemplateMain(path, template string) {
-	f, err := os.OpenFile(path+"main.go", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Failed to create main.go")
-		panic(50)
-	}
-
-	defer f.Close()
-
-	f.WriteString(template)
-}
-
-/*
-Writes a k8s deployment file
-*/
-func writeK8S(path, service, projectName string) {
-	var templateData struct {
-		ProjectName string
-		Service     string
-	}
-
-	templateData.ProjectName = projectName
-	templateData.Service = service
-
-	template, err := template.New("k8s").Parse(k8sTemplate)
-	if err != nil {
-		log.Println("Failed to create a k8s template")
-		panic(50)
-	}
-
-	buf := &bytes.Buffer{}
-	err = template.Execute(buf, templateData)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	file, err := os.Create(fmt.Sprintf("%sdeployment-%s.yml", path, service))
-	if err != nil {
-		log.Panic(err)
-	}
-	defer file.Close()
-
-	_, err = file.Write(buf.Bytes())
-	if err != nil {
-		log.Panic(err)
-	}
-	file.Sync()
-}
+// PRIVATE TYPES
+// ========================================================================
 
 /*
 Template for balancer main function
@@ -236,7 +76,7 @@ spec:
         ports:
         - containerPort: 8080
           name: http
-		env:
+        env:
         - name: API_SECRET
           valueFrom:
             secretKeyRef:
@@ -269,7 +109,7 @@ spec:
         ports:
         - containerPort: 8080
           name: http
-		env:
+        env:
         - name: API_SECRET
           valueFrom:
             secretKeyRef:
@@ -298,3 +138,163 @@ spec:
   selector:
     app: {{.ProjectName}}-{{.Service}}-balancer
 `
+
+// PUBLIC FUNCTIONS
+// ========================================================================
+
+/*
+Action for create service target
+*/
+func CreateServiceAction(ctx *cli.Context) {
+	defer common.TimeCurrentFn()
+
+	serviceName := ctx.Args().First()
+	if serviceName == "" {
+		common.LogPanic("Service name not provided")
+	}
+
+	log.Printf("Creating service %s", serviceName)
+
+	serviceRoot := "services/" + serviceName + "/"
+
+	pc := project.ProjectConfig{}
+	common.PanicOnError(pc.Read(), "Failed to read mstk_project.toml")
+
+	// Create directory structure
+	err := os.Mkdir(serviceRoot, os.ModePerm)
+	common.PanicOnError(err, "Failed to create service directory")
+
+	err = os.Mkdir(serviceRoot+"balancer", os.ModePerm)
+	common.PanicOnError(err, "Failed to create balancer directory")
+
+	err = os.Mkdir(serviceRoot+"service", os.ModePerm)
+	common.PanicOnError(err, "Failed to create service directory")
+
+	// Write files
+	writeGoMod(serviceName+"/"+"balancer", &pc)
+	writeGoMod(serviceName+"/"+"service", &pc)
+
+	writeTemplateMain(serviceRoot+"balancer/", balancerTemplate)
+	writeTemplateMain(serviceRoot+"service/", serviceTemplate)
+
+	// Write docker files
+	pc.Docker.WriteTemplate(serviceName+"-balancer", "bin/")
+	pc.Docker.WriteTemplate(serviceName+"-service", "bin/")
+
+	// Write k8s deployment yml file
+	writeK8S("k8s/", serviceName, pc.PSD.Project)
+
+	pc.PSD.Services = append(pc.PSD.Services, project.ServiceEntry{Name: serviceName})
+	common.PanicOnError(pc.Write(), "Failed to write project config")
+
+	log.Println("Done.")
+}
+
+/*
+Action for remove service target
+*/
+func RemoveServiceAction(ctx *cli.Context) {
+	defer common.TimeCurrentFn()
+
+	serviceName := ctx.Args().First()
+	if serviceName == "" {
+		common.LogPanic("Service name not provided")
+	}
+
+	pc := project.ProjectConfig{}
+	pc.Read()
+
+	// Check if we have service in the project
+	for i, service := range pc.PSD.Services {
+		if service.Name == serviceName {
+			log.Println("Found... Deleting")
+
+			// Teardown
+			teardownService(service.Name, &pc)
+
+			// Delete
+			pc.PSD.Services[i] = pc.PSD.Services[len(pc.PSD.Services)-1]
+			pc.PSD.Services = pc.PSD.Services[:len(pc.PSD.Services)-1]
+
+			err := os.RemoveAll(fmt.Sprintf("services/%s/", serviceName))
+			common.PanicOnError(err, "Failed to delete service directory")
+
+			// Remove any artifacts from docker/ k8s/ bin/ directories
+			filesToRemove, err := common.GetFilesByExtension(
+				"docker/",
+				[]string{
+					fmt.Sprintf(".%s_balancer", serviceName),
+					fmt.Sprintf(".%s_service", serviceName),
+				})
+			common.PanicOnError(err, "Failed to query docker files")
+
+			filesToRemove = append(filesToRemove, fmt.Sprintf("k8s/deployment-%s.yml", serviceName))
+			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s_service", serviceName))
+			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s_balancer", serviceName))
+
+			for _, file := range filesToRemove {
+				err := os.Remove(file)
+				common.PanicOnError(err, "Failed to remove file")
+			}
+
+			break
+		}
+	}
+
+	pc.Write()
+}
+
+// PRIVATE FUNCTIONS
+// ========================================================================
+
+/*
+Write a go.mod file in the directory
+*/
+func writeGoMod(path string, pc *project.ProjectConfig) {
+	f, err := os.OpenFile("services/"+path+"/go.mod", os.O_CREATE|os.O_WRONLY, 0644)
+	common.PanicOnError(err, "Failed to create go.mod file")
+	defer f.Close()
+
+	f.WriteString("module " + pc.PSD.PackageLocation + path)
+	f.WriteString("\n\n")
+	f.WriteString(pc.PSD.GoVersion)
+}
+
+/*
+Write a template main.go file in the directory
+*/
+func writeTemplateMain(path, template string) {
+	f, err := os.OpenFile(path+"main.go", os.O_CREATE|os.O_WRONLY, 0644)
+	common.PanicOnError(err, "Failed to create main.go file")
+	defer f.Close()
+
+	f.WriteString(template)
+}
+
+/*
+Writes a k8s deployment file
+*/
+func writeK8S(path, service, projectName string) {
+	var templateData struct {
+		ProjectName string
+		Service     string
+	}
+
+	templateData.ProjectName = projectName
+	templateData.Service = service
+
+	template, err := template.New("k8s").Parse(k8sTemplate)
+	common.PanicOnError(err, "Failed to create a k8s template")
+
+	buf := &bytes.Buffer{}
+	err = template.Execute(buf, templateData)
+	common.PanicOnError(err, "Failed to execute k8s template")
+
+	file, err := os.Create(fmt.Sprintf("%sdeployment-%s.yml", path, service))
+	common.PanicOnError(err, "Failed to create deployment.yml file")
+	defer file.Close()
+
+	_, err = file.Write(buf.Bytes())
+	common.PanicOnError(err, "Failed to write deployment.yml file")
+	file.Sync()
+}

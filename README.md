@@ -32,7 +32,10 @@ This will create a MSTK template project with the name
 
 ```
 .
+├── bin
+├── docker
 ├── go.work
+├── k8s
 ├── mstk_project.toml
 ├── services
 └── template-secret.yml
@@ -48,17 +51,23 @@ This command wil automatically create a service and a load balancer directory fo
 
 ```
 .
+├── bin
+├── docker
+│   ├── Dockerfile.example-balancer
+│   └── Dockerfile.example-service
 ├── go.work
+├── k8s
+│   └── deployment-example.yml
 ├── mstk_project.toml
-└── services
-    └── calculator
-        ├── balancer
-        │   ├── go.mod
-        │   └── main.go
-        ├── deployment-calculator.yml
-        └── service
-            ├── go.mod
-            └── main.go
+├── services
+│   └── example
+│       ├── balancer
+│       │   ├── go.mod
+│       │   └── main.go
+│       └── service
+│           ├── go.mod
+│           └── main.go
+└── template-secret.yml
 ```
 
 You can modify deployment-\<service\>.yml by hand to customize the deployment of the service and balancer
@@ -85,7 +94,30 @@ Alternatively you can use
 mstk deploy <service>
 ```
 
-To deploy a specific service.
+To deploy a specific service. After which you should have a structure similar to this
+
+```
+.
+├── bin
+│   ├── example-balancer
+│   └── example-service
+├── docker
+│   ├── Dockerfile.example-balancer
+│   └── Dockerfile.example-service
+├── go.work
+├── k8s
+│   └── deployment-example.yml
+├── mstk_project.toml
+├── services
+│   └── example
+│       ├── balancer
+│       │   ├── go.mod
+│       │   └── main.go
+│       └── service
+│           ├── go.mod
+│           └── main.go
+└── template-secret.yml
+```
 
 To teardown services the command is the same just replace `deploy` with `teardown`
 

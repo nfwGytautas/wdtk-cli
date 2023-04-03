@@ -3,10 +3,9 @@ package target
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/exec"
-	"strings"
+	"sync"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
 	"github.com/urfave/cli"
 )
@@ -19,7 +18,7 @@ import (
 Action for teardown target
 */
 func TeardownAction(ctx *cli.Context) {
-	defer TimeFn("Teardown")()
+	defer common.TimeCurrentFn()
 	log.Println("Tearing down")
 
 	serviceName := ctx.Args().First()
@@ -28,17 +27,19 @@ func TeardownAction(ctx *cli.Context) {
 	pc.Read()
 
 	if serviceName == "" {
-		teardownMstkK8s(pc.Project)
+		pc.Kubernetes.DeleteMSTK()
 
 		// All services
-		for _, service := range pc.Services {
-			// TODO: Goroutines
-			teardownService(service.Name, &pc)
+		var wg sync.WaitGroup
+		wg.Add(len(pc.PSD.Services))
+		for _, service := range pc.PSD.Services {
+			go teardownServiceMt(service.Name, &pc, &wg)
 		}
+		wg.Wait()
 	} else {
 		// Check if we have the service
 		found := false
-		for _, service := range pc.Services {
+		for _, service := range pc.PSD.Services {
 			if serviceName == service.Name {
 				found = true
 			}
@@ -48,8 +49,7 @@ func TeardownAction(ctx *cli.Context) {
 			// Specific service
 			teardownService(serviceName, &pc)
 		} else {
-			log.Printf("Service %s not found inside project", serviceName)
-			panic(50)
+			common.LogPanic("Service %s not found in project", serviceName)
 		}
 	}
 }
@@ -59,56 +59,17 @@ func TeardownAction(ctx *cli.Context) {
 // ========================================================================
 
 /*
-Teardown services
+Multithreaded version of teardown services
 */
-func teardownService(service string, pc *project.ProjectConfig) {
-	defer TimeFn(fmt.Sprintf("Cleaning up %s", service))()
-
-	log.Printf("Cleaning up %s", service)
-
-	serviceRoot := fmt.Sprintf("./services/%s/", service)
-
-	cleanupCmd := exec.Command("kubectl", "delete", "-f", serviceRoot, "-n", pc.Project)
-	log.Printf("Running %s", cleanupCmd.String())
-
-	_, err := cleanupCmd.Output()
-	if err != nil {
-		// Not found is not an actual error, just it doesn't exist which is fine since we are cleaning up anyway
-		if !strings.Contains(
-			string((err.(*exec.ExitError).Stderr)),
-			"not found",
-		) {
-			log.Println(string((err.(*exec.ExitError).Stderr)))
-			log.Panic(err)
-		}
-	}
+func teardownServiceMt(service string, pc *project.ProjectConfig, wg *sync.WaitGroup) {
+	defer wg.Done()
+	teardownService(service, pc)
 }
 
 /*
-Teardown mstk services
+Teardown services
 */
-func teardownMstkK8s(namespace string) {
-	defer TimeFn("Cleaning mstk k8s")()
-
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Creating in %s", dirname)
-	baseDir := dirname + "/mstk/k8s/"
-
-	cleanupCmd := exec.Command("kubectl", "delete", "-f", baseDir, "-n", namespace)
-	log.Printf("Running %s", cleanupCmd.String())
-
-	_, err = cleanupCmd.Output()
-	if err != nil {
-		// Not found is not an actual error, just it doesn't exist which is fine since we are cleaning up anyway
-		if !strings.Contains(
-			string((err.(*exec.ExitError).Stderr)),
-			"not found",
-		) {
-			log.Println(string((err.(*exec.ExitError).Stderr)))
-			log.Panic(err)
-		}
-	}
+func teardownService(service string, pc *project.ProjectConfig) {
+	serviceRoot := fmt.Sprintf("k8s/deployment-%s.yml", service)
+	pc.Kubernetes.Delete(serviceRoot)
 }

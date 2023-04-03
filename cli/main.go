@@ -4,18 +4,26 @@ import (
 	"log"
 	"os"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/target"
 	"github.com/urfave/cli"
 )
 
+// PUBLIC TYPES
 // ========================================================================
-// PUBLIC
+
+// PRIVATE TYPES
+// ========================================================================
+
+// PUBLIC FUNCTIONS
 // ========================================================================
 
 func main() {
 	app := &cli.App{
-		Name:  "mstk",
-		Usage: "CLI for MSTK",
+		Name:                 "mstk",
+		Usage:                "CLI for MSTK",
+		EnableBashCompletion: true,
+		Version:              common.CLIVersion,
 		Commands: []cli.Command{
 			// MSTK
 			{
@@ -74,3 +82,6 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+// PRIVATE FUNCTIONS
+// ========================================================================

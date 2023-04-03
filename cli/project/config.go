@@ -2,9 +2,9 @@ package project
 
 import (
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/nfwGytautas/mstk/cli/api"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -13,12 +13,11 @@ import (
 // ========================================================================
 
 // TODO: Verify config
-// TODO: Remove services
 
 /*
-Config that is contained inside mstk_project.toml file
+Data that is stored inside a .toml file
 */
-type ProjectConfig struct {
+type ProjectSaveData struct {
 	Version         string         `toml:"MSTKVersion" comment:"The version of MSTK"`
 	GoVersion       string         `toml:"GoVersion" comment:"Version of go to use"`
 	Project         string         `toml:"Project" comment:"Project name"`
@@ -34,52 +33,67 @@ type ServiceEntry struct {
 }
 
 /*
+Config that is contained inside mstk_project.toml file
+*/
+type ProjectConfig struct {
+	PSD        ProjectSaveData
+	Kubernetes api.Kubernetes
+	Builder    api.GoBuilder
+	Docker     api.Docker
+}
+
+/*
 Read config file into the struct
 */
-func (pc *ProjectConfig) Read() {
+func (pc *ProjectConfig) Read() error {
 	b, err := os.ReadFile("mstk_project.toml")
 	if err != nil {
-		log.Printf("Failed to read mstk_project.toml")
-		panic(50)
+		return err
 	}
 
-	err = toml.Unmarshal(b, pc)
+	err = toml.Unmarshal(b, &pc.PSD)
 	if err != nil {
-		log.Printf("Failed to unmarshal project config")
-		panic(51)
+		return err
 	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	pc.Kubernetes = api.CreateK8s(pc.PSD.Project)
+	pc.Builder = api.CreateBuilder()
+	pc.Docker = api.CreateDocker(cwd, pc.PSD.Project)
+	return nil
 }
 
 /*
 Write to config file
 */
-func (pc *ProjectConfig) Write() {
-	pc.Version = cliVersion
-	pc.GoVersion = "go 1.20"
+func (pc *ProjectConfig) Write() error {
+	pc.PSD.Version = cliVersion
+	pc.PSD.GoVersion = "go 1.20"
 
 	// Check if mstk_project.toml already exists, if not create it
 	f, err := os.OpenFile("mstk_project.toml", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Printf("Failed to create mstk_project.toml")
-		panic(50)
+		return err
 	}
 
 	defer f.Close()
 
-	b, err := toml.Marshal(pc)
+	b, err := toml.Marshal(pc.PSD)
 	if err != nil {
-		log.Printf("Failed to marshal project config")
-		panic(51)
+		return err
 	}
 
 	_, err = f.Write(b)
 	if err != nil {
-		log.Printf("Failed to write config to file")
-		panic(52)
+		return err
 	}
 
 	// Write go.work
-	pc.writeGoWork()
+	return pc.writeGoWork()
 }
 
 // ========================================================================
@@ -89,26 +103,27 @@ func (pc *ProjectConfig) Write() {
 /*
 Write a go.work file from project config
 */
-func (pc *ProjectConfig) writeGoWork() {
+func (pc *ProjectConfig) writeGoWork() error {
 	// Check if mstk_project.toml already exists, if not create it
 	f, err := os.OpenFile("go.work", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Printf("Failed to create go.work %v", err.Error())
-		panic(50)
+		return err
 	}
 
 	defer f.Close()
 
 	f.WriteString("// Version\n")
-	f.WriteString(pc.GoVersion)
+	f.WriteString(pc.PSD.GoVersion)
 	f.WriteString("\n\n")
 
 	f.WriteString("// Workspaces\n")
-	for _, service := range pc.Services {
+	for _, service := range pc.PSD.Services {
 		f.WriteString(fmt.Sprintf("use ./services/%s/service/\n", service.Name))
 		f.WriteString(fmt.Sprintf("use ./services/%s/balancer/\n", service.Name))
 		f.WriteString("\n")
 	}
+
+	return nil
 }
 
 /*

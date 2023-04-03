@@ -1,11 +1,11 @@
 package target
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path"
 
+	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
 	"github.com/urfave/cli"
 )
@@ -20,37 +20,27 @@ Action for delete command
 func DeleteAction(ctx *cli.Context) {
 	// Create bin directory
 	cwd, err := os.Getwd()
-	if err != nil {
-		log.Panic(err)
-	}
+	common.PanicOnError(err, "Failed to get current working directory")
 
 	log.Printf("Deleting %s", path.Base(cwd))
 
 	// Check if mstk_project.toml exists
-	_, err = os.OpenFile("mstk_project.toml", os.O_RDONLY, os.ModePerm)
-	if errors.Is(err, os.ErrNotExist) {
-		log.Println("mstk_project.toml not found")
-		panic(50)
-	}
-
 	pc := project.ProjectConfig{}
-	pc.Read()
+	common.PanicOnError(pc.Read(), "Failed to read mstk_project.toml")
 
 	// Teardown
 	TeardownAction(ctx)
 
 	// Remove namespace
-	deleteNamespace(pc.Project)
+	pc.Kubernetes.DeleteNamespace()
+
+	// TODO: Delete docker images
 
 	err = os.Chdir("../")
-	if err != nil {
-		log.Panic(err)
-	}
+	common.PanicOnError(err, "Failed to change directory, the project directory needs to be deleted manually")
 
 	err = os.RemoveAll(cwd)
-	if err != nil {
-		log.Panic(err)
-	}
+	common.PanicOnError(err, "Failed to delete project directory, the project directory needs to be deleted manually")
 
 	log.Println("Done")
 }
