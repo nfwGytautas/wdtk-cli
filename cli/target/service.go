@@ -8,6 +8,7 @@ import (
 
 	"github.com/nfwGytautas/mstk/cli/common"
 	"github.com/nfwGytautas/mstk/cli/project"
+	"github.com/nfwGytautas/mstk/cli/templates"
 	"github.com/urfave/cli"
 )
 
@@ -16,127 +17,6 @@ import (
 
 // PRIVATE TYPES
 // ========================================================================
-
-/*
-Template for balancer main function
-*/
-const balancerTemplate = `
-package main
-
-import "log"
-
-func main() {
-	log.Println("MSTK template balancer")
-}
-
-`
-
-/*
-Template for service main function
-*/
-const serviceTemplate = `
-package main
-
-import "log"
-
-func main() {
-	log.Println("MSTK template service")
-}
-
-`
-
-/*
-Template for deployment file
-*/
-const k8sTemplate = `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{.ProjectName}}-{{.Service}}-service
-spec:
-  selector:
-    matchLabels:
-      app: {{.ProjectName}}-{{.Service}}-service
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: {{.ProjectName}}-{{.Service}}-service
-    spec:
-      containers:
-      - image: {{.ProjectName}}/{{.Service}}-service:0.0.0
-        name: {{.ProjectName}}-{{.Service}}-service
-        imagePullPolicy: Never
-        resources:
-          limits:
-            memory: "500M"
-            cpu: "50m"
-        ports:
-        - containerPort: 8080
-          name: http
-        env:
-        - name: API_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: mstk-project-secret
-              key: Secret
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{.ProjectName}}-{{.Service}}-balancer
-spec:
-  selector:
-    matchLabels:
-      app: {{.ProjectName}}-{{.Service}}-balancer
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: {{.ProjectName}}-{{.Service}}-balancer
-    spec:
-      containers:
-      - image: {{.ProjectName}}/{{.Service}}-balancer:0.0.0
-        name: {{.ProjectName}}-{{.Service}}-balancer
-        imagePullPolicy: Never
-        resources:
-          limits:
-            memory: "500M"
-            cpu: "50m"
-        ports:
-        - containerPort: 8080
-          name: http
-        env:
-        - name: API_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: mstk-project-secret
-              key: Secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{.ProjectName}}-{{.Service}}-service
-spec:
-  ports:
-    - port: 8080
-      targetPort: 8080
-  selector:
-    app: {{.ProjectName}}-{{.Service}}-service
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{.ProjectName}}-{{.Service}}-balancer
-spec:
-  ports:
-    - port: 8080
-      targetPort: 8080
-  selector:
-    app: {{.ProjectName}}-{{.Service}}-balancer
-`
 
 // PUBLIC FUNCTIONS
 // ========================================================================
@@ -173,8 +53,11 @@ func CreateServiceAction(ctx *cli.Context) {
 	writeGoMod(serviceName+"/"+"balancer", &pc)
 	writeGoMod(serviceName+"/"+"service", &pc)
 
-	writeTemplateMain(serviceRoot+"balancer/", balancerTemplate)
-	writeTemplateMain(serviceRoot+"service/", serviceTemplate)
+	writeTemplateMain(serviceRoot+"balancer/", templates.BalancerTemplate, templates.BalancerTemplateData{
+		ServiceName: serviceName,
+	})
+
+	writeTemplateMain(serviceRoot+"service/", templates.ServiceTemplate, templates.ServiceTemplateData{})
 
 	// Write docker files
 	pc.Docker.WriteTemplate(serviceName+"-balancer", "bin/")
@@ -228,8 +111,8 @@ func RemoveServiceAction(ctx *cli.Context) {
 			common.PanicOnError(err, "Failed to query docker files")
 
 			filesToRemove = append(filesToRemove, fmt.Sprintf("k8s/deployment-%s.yml", serviceName))
-			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s_service", serviceName))
-			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s_balancer", serviceName))
+			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s-service", serviceName))
+			filesToRemove = append(filesToRemove, fmt.Sprintf("bin/%s-balancer", serviceName))
 
 			for _, file := range filesToRemove {
 				err := os.Remove(file)
@@ -262,27 +145,33 @@ func writeGoMod(path string, pc *project.ProjectConfig) {
 /*
 Write a template main.go file in the directory
 */
-func writeTemplateMain(path, template string) {
-	f, err := os.OpenFile(path+"main.go", os.O_CREATE|os.O_WRONLY, 0644)
-	common.PanicOnError(err, "Failed to create main.go file")
-	defer f.Close()
+func writeTemplateMain(path, templateString string, data any) {
+	t, err := template.New("main").Parse(templateString)
+	common.PanicOnError(err, "Failed to create a main template")
 
-	f.WriteString(template)
+	buf := &bytes.Buffer{}
+	err = t.Execute(buf, data)
+	common.PanicOnError(err, "Failed to execute main template")
+
+	file, err := os.Create(fmt.Sprintf("%smain.go", path))
+	common.PanicOnError(err, "Failed to create main file")
+	defer file.Close()
+
+	_, err = file.Write(buf.Bytes())
+	common.PanicOnError(err, "Failed to write main file")
+	file.Sync()
 }
 
 /*
 Writes a k8s deployment file
 */
 func writeK8S(path, service, projectName string) {
-	var templateData struct {
-		ProjectName string
-		Service     string
+	templateData := templates.K8STemplateData{
+		ProjectName: projectName,
+		Service:     service,
 	}
 
-	templateData.ProjectName = projectName
-	templateData.Service = service
-
-	template, err := template.New("k8s").Parse(k8sTemplate)
+	template, err := template.New("k8s").Parse(templates.K8STemplate)
 	common.PanicOnError(err, "Failed to create a k8s template")
 
 	buf := &bytes.Buffer{}

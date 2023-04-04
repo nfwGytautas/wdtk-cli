@@ -9,86 +9,75 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========================================================================
-// PUBLIC
+// PUBLIC TYPES
 // ========================================================================
 
 /*
-Struct holding information for this balancer
+A struct representing a balancer
 */
-type BalancerInfo struct {
-	Service  string             // Service that the balancer is managing
-	filterFn LoadBalancerFilter // Filter to apply
+type Balancer struct {
+	BalancerFn BalancerFunctions
 }
 
-type Shard struct {
-	URL string
+// PRIVATE TYPES
+// ========================================================================
+
+// PUBLIC FUNCTIONS
+// ========================================================================
+
+/*
+Creates a balancer and returns it or error if failed, make sure to set the balancers functions
+*/
+func CreateBalancer() (Balancer, error) {
+	return Balancer{}, nil
 }
 
 /*
-Filter for balancing shards
+Run the balancer
+
+NOTE: Blocking goroutine
 */
-type LoadBalancerFilter func(*gin.Context) Shard
+func (b *Balancer) Run() error {
+	log.Printf("Starting balancer service for %s", b.BalancerFn.GetServiceName())
 
-/*
-Function for configuring a balancer
-*/
-type Configure func() BalancerInfo
-
-/*
-Configuration
-*/
-var balancerInfo BalancerInfo
-
-/*
-Start load balancer library
-*/
-func Start(config Configure, filter LoadBalancerFilter) {
-	log.Println("Setting up balancer lib")
-
-	// Get configuration
-	balancerInfo = config()
-
-	log.Printf("Service: %s", balancerInfo.Service)
-
-	// Balancer open by default
-	balancerInfo.filterFn = filter
-
-	// Create gin engine
 	r := gin.Default()
 
-	// TODO: Rest of the endpoints
-	r.GET("/*params", endpointHandler)
-	r.POST("/*params", endpointHandler)
+	// Routes
+	r.GET("/*params", b.endpointHandler())
+	r.POST("/*params", b.endpointHandler())
 
-	// Run the balancer
-	r.Run(":8080")
+	return r.Run(":8080")
 }
 
+// PRIVATE FUNCTIONS
 // ========================================================================
-// PRIVATE
-// ========================================================================
 
-func endpointHandler(c *gin.Context) {
-	shard := balancerInfo.filterFn(c)
+func (b *Balancer) endpointHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		shard, err := b.BalancerFn.GetShard(c)
+		if err != nil {
+			c.Status(http.StatusServiceUnavailable)
+			return
+		}
 
-	url, err := url.Parse("http://" + shard.URL)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		return
+		url, err := url.Parse("http://" + shard.URL)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Forwarding '%s' -> '%s'", c.Request.URL.String(), url.String())
+
+		proxy := httputil.NewSingleHostReverseProxy(url)
+
+		proxy.Director = func(req *http.Request) {
+			req.Method = c.Request.Method
+			req.Header = c.Request.Header
+			req.Host = url.Host
+			req.URL.Scheme = url.Scheme
+			req.URL.Host = url.Host
+		}
+
+		proxy.ServeHTTP(c.Writer, c.Request)
 	}
-
-	log.Printf("Forwarding '%s' -> '%s'", c.Request.URL.String(), url.String())
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
-
-	proxy.Director = func(req *http.Request) {
-		req.Method = c.Request.Method
-		req.Header = c.Request.Header
-		req.Host = url.Host
-		req.URL.Scheme = url.Scheme
-		req.URL.Host = url.Host
-	}
-
-	proxy.ServeHTTP(c.Writer, c.Request)
 }
