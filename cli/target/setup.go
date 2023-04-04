@@ -2,7 +2,6 @@ package target
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -37,24 +36,25 @@ func SetupAction(ctx *cli.Context) {
 	}
 	// TODO: Find the MSTK installation path automatically
 
-	log.Println("Running setup")
+	common.LogInfo("Running setup")
 
-	log.Println("Creating mstk directory")
+	common.LogTrace("Creating mstk directory")
 
 	baseDir, err := common.GetMSTKDir()
 	common.PanicOnError(err, "Failed to get MSTK root directory")
 
-	log.Printf("Creating %s", baseDir)
+	common.LogTrace("Creating %s", baseDir)
 
 	common.PanicOnError(os.Mkdir(baseDir, os.ModePerm), "Failed to create mstk root directory")
 	common.PanicOnError(os.Mkdir(baseDir+"bin", os.ModePerm), "Failed to create bin directory")
 	common.PanicOnError(os.Mkdir(baseDir+"docker", os.ModePerm), "Failed to create docker directory")
 	common.PanicOnError(os.Mkdir(baseDir+"k8s", os.ModePerm), "Failed to create k8s directory")
 
-	log.Println("Compiling services")
-	services := GetMstkServicesList()
+	common.LogTrace("Compiling services")
+	services, err := GetMstkServicesList()
+	common.PanicOnError(err, "Failed to get mstk services list")
 
-	log.Printf("Found %v services %v", len(services), services)
+	common.LogTrace("Found %v services %v", len(services), services)
 
 	var wg sync.WaitGroup
 	wg.Add(len(services))
@@ -65,7 +65,7 @@ func SetupAction(ctx *cli.Context) {
 
 	common.CopyDir("kubes/", baseDir+"k8s/", []string{".md"})
 
-	log.Println("Setup done you can now create a template project using 'mstk template' command")
+	common.LogInfo("Setup done you can now create a template project using 'mstk template' command")
 }
 
 // ========================================================================
@@ -75,13 +75,13 @@ func SetupAction(ctx *cli.Context) {
 /*
 Returns a list of services in mstk
 */
-func GetMstkServicesList() []string {
+func GetMstkServicesList() ([]string, error) {
 	directories, err := common.GetDirectories("gomods/services/")
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 
-	return directories
+	return directories, nil
 }
 
 /*
@@ -91,7 +91,7 @@ func compileService(path string, wg *sync.WaitGroup) {
 	defer common.TimeCurrentFn()
 	defer wg.Done()
 
-	log.Printf("Compiling %s", path)
+	common.LogTrace("Compiling %s", path)
 
 	mstkRoot, err := common.GetMSTKDir()
 	common.PanicOnError(err, "Failed to get mstk root directory")

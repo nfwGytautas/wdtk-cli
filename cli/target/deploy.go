@@ -2,7 +2,6 @@ package target
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/nfwGytautas/mstk/cli/common"
@@ -20,7 +19,7 @@ Action for deploy target
 func DeployAction(ctx *cli.Context) {
 	defer common.TimeCurrentFn()
 
-	log.Println("Deploying")
+	common.LogInfo("Deploying")
 
 	serviceName := ctx.Args().First()
 
@@ -56,8 +55,7 @@ func DeployAction(ctx *cli.Context) {
 			// Specific service
 			deployService(serviceName, &pc)
 		} else {
-			log.Printf("Service %s not found inside project", serviceName)
-			panic(50)
+			common.LogPanic("Service %s not found inside project", serviceName)
 		}
 	}
 

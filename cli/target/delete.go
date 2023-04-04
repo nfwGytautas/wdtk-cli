@@ -1,7 +1,6 @@
 package target
 
 import (
-	"log"
 	"os"
 	"path"
 
@@ -22,7 +21,7 @@ func DeleteAction(ctx *cli.Context) {
 	cwd, err := os.Getwd()
 	common.PanicOnError(err, "Failed to get current working directory")
 
-	log.Printf("Deleting %s", path.Base(cwd))
+	common.LogInfo("Deleting %s", path.Base(cwd))
 
 	// Check if mstk_project.toml exists
 	pc := project.ProjectConfig{}
@@ -42,5 +41,5 @@ func DeleteAction(ctx *cli.Context) {
 	err = os.RemoveAll(cwd)
 	common.PanicOnError(err, "Failed to delete project directory, the project directory needs to be deleted manually")
 
-	log.Println("Done")
+	common.LogInfo("Done.")
 }

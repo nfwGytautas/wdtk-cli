@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 
 	"github.com/nfwGytautas/mstk/cli/common"
@@ -33,7 +32,7 @@ func TemplateAction(cli *cli.Context) {
 		common.LogPanic("Package name not provided")
 	}
 
-	log.Printf("Generating template project '%s'", projectName)
+	common.LogInfo("Generating template project '%s'", projectName)
 
 	// Create project root
 	common.PanicOnError(os.Mkdir(projectName, os.ModePerm), "Failed to create project root directory")
@@ -53,7 +52,7 @@ func TemplateAction(cli *cli.Context) {
 	pc := project.ProjectConfig{}
 	pc.Read()
 
-	log.Println("Creating k8s namespace")
+	common.LogTrace("Creating k8s namespace")
 	pc.Kubernetes.CreateNamespace()
 
 	// Create project config
@@ -61,7 +60,7 @@ func TemplateAction(cli *cli.Context) {
 
 	// TODO: Basic flutter environment
 
-	log.Println("Done.")
+	common.LogInfo("Done.")
 }
 
 // ========================================================================
@@ -88,7 +87,7 @@ stringData:
 Writes a template mstk_project.toml
 */
 func writeProjectToml(projectName, packageName string) {
-	log.Println("Writing mstk_project.toml")
+	common.LogTrace("Writing mstk_project.toml")
 
 	pc := project.ProjectConfig{}
 	pc.PSD.Project = projectName

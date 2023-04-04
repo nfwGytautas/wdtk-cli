@@ -1,7 +1,6 @@
 package target
 
 import (
-	"log"
 	"os"
 
 	"github.com/nfwGytautas/mstk/cli/common"
@@ -31,7 +30,7 @@ func CleanActionMstk(ctx *cli.Context) {
 	// TODO: Delete mstk images
 
 	// Remove bin folder
-	log.Println("Deleting mstk directory")
+	common.LogTrace("Deleting mstk directory")
 	common.PanicOnError(os.RemoveAll(mstkDir), "Failed to remove mstk directory")
 }
 

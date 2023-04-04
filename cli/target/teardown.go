@@ -2,7 +2,6 @@ package target
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/nfwGytautas/mstk/cli/common"
@@ -19,7 +18,7 @@ Action for teardown target
 */
 func TeardownAction(ctx *cli.Context) {
 	defer common.TimeCurrentFn()
-	log.Println("Tearing down")
+	common.LogInfo("Tearing down")
 
 	serviceName := ctx.Args().First()
 

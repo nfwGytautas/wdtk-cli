@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 
 	"github.com/nfwGytautas/mstk/cli/common"
@@ -153,7 +152,7 @@ func CreateServiceAction(ctx *cli.Context) {
 		common.LogPanic("Service name not provided")
 	}
 
-	log.Printf("Creating service %s", serviceName)
+	common.LogInfo("Creating service %s", serviceName)
 
 	serviceRoot := "services/" + serviceName + "/"
 
@@ -187,7 +186,7 @@ func CreateServiceAction(ctx *cli.Context) {
 	pc.PSD.Services = append(pc.PSD.Services, project.ServiceEntry{Name: serviceName})
 	common.PanicOnError(pc.Write(), "Failed to write project config")
 
-	log.Println("Done.")
+	common.LogInfo("Done.")
 }
 
 /*
@@ -207,7 +206,7 @@ func RemoveServiceAction(ctx *cli.Context) {
 	// Check if we have service in the project
 	for i, service := range pc.PSD.Services {
 		if service.Name == serviceName {
-			log.Println("Found... Deleting")
+			common.LogDebug("Found... Deleting")
 
 			// Teardown
 			teardownService(service.Name, &pc)

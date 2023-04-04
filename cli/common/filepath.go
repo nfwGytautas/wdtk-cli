@@ -2,7 +2,6 @@ package common
 
 import (
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -78,19 +77,19 @@ func GetMSTKDir() (string, error) {
 /*
 Copies all files from one directory to another
 */
-func CopyDir(from, to string, ignoreExtensions []string) {
+func CopyDir(from, to string, ignoreExtensions []string) error {
 	f, err := os.Open(from)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	fileInfo, err := f.Readdir(-1)
 	f.Close()
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
-	log.Printf("Copying directory '%s' to '%s'", from, to)
+	LogTrace("Copying directory '%s' to '%s'", from, to)
 
 fileLoop:
 	for _, file := range fileInfo {
@@ -105,21 +104,23 @@ fileLoop:
 				}
 			}
 
-			log.Printf("\t%s", file.Name())
+			LogTrace("\t%s", file.Name())
 
 			// Read all content of src to data, may cause OOM for a large file.
 			data, err := os.ReadFile(from + file.Name())
 			if err != nil {
-				log.Panic(err)
+				return err
 			}
 
 			// Write data to dst
 			err = os.WriteFile(to+file.Name(), data, fs.ModePerm)
 			if err != nil {
-				log.Panic(err)
+				return err
 			}
 		}
 	}
+
+	return nil
 }
 
 /*
@@ -148,7 +149,7 @@ fileLoop:
 				}
 			}
 
-			log.Printf("\t%s", file.Name())
+			LogTrace("\t%s", file.Name())
 			result = append(result, root+file.Name())
 		}
 	}
