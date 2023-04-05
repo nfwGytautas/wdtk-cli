@@ -83,6 +83,12 @@ func RemoveServiceAction(ctx *cli.Context) {
 		common.LogPanic("Service name not provided")
 	}
 
+	prompt, err := common.YNPrompt(fmt.Sprintf("Are you sure you want to remove service %s", serviceName), false)
+	common.PanicOnError(err, "Failed prompt")
+	if !prompt {
+		return
+	}
+
 	pc := project.ProjectConfig{}
 	pc.Read()
 

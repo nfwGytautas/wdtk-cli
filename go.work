@@ -4,10 +4,12 @@ go 1.20
 use ./cli
 
 // Services
-use ./gomods/services/gateway
-use ./gomods/services/locator
+use ./gomods/gateway
+use ./gomods/locator
 
-// Frameworks
-use ./gomods/api/balancer-api
-use ./gomods/api/microservice-api
-use ./gomods/api/common-api
+// Backends
+use ./backends/go/balancer-api
+use ./backends/go/microservice-api
+
+// Libs
+use ./lib/gdev

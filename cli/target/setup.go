@@ -31,10 +31,10 @@ Execute setup target
 func SetupAction(ctx *cli.Context) {
 	defer common.TimeCurrentFn()
 
+	// TODO: Find the MSTK installation path automatically
 	if !common.IsMSTKRoot() {
 		common.LogPanic("setup needs to be ran inside a mstk root directory")
 	}
-	// TODO: Find the MSTK installation path automatically
 
 	common.LogInfo("Running setup")
 

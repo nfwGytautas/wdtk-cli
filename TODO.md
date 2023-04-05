@@ -1,17 +1,23 @@
-# TODO
+# TODOs of the project
 
-TODO: Code
-    TODO: Clean up gomods source files
-
-TODO: Testing
+## PoC
+### Testing
     TODO: Unit tests
     TODO: Export postman configuration
 
-TODO: Security
-    TODO: Pass JWT Tokens to microservices
+### Security
+    TODO: Salt and pepper authentication
 
-TODO: Update readme
-
-TODO: CLI
+### CLI
     TODO: Remove docker images with clean/service remove targets
-    TODO: Prompts for unsafe operations
+
+
+## v0.1.0
+
+### Features
+    TODO: Add C++ support for service backend
+    TODO: Add socket communication for services
+
+### CLI
+    TODO: When creating a service allow to choose the backend of the services
+    TODO: When creating a service allow to choose the communication type of the services

@@ -1,6 +1,7 @@
 package target
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -20,6 +21,12 @@ func DeleteAction(ctx *cli.Context) {
 	// Create bin directory
 	cwd, err := os.Getwd()
 	common.PanicOnError(err, "Failed to get current working directory")
+
+	prompt, err := common.YNPrompt(fmt.Sprintf("Are you sure you want to delete the project %s", cwd), false)
+	common.PanicOnError(err, "Failed prompt")
+	if !prompt {
+		return
+	}
 
 	common.LogInfo("Deleting %s", path.Base(cwd))
 

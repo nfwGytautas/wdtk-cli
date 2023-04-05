@@ -20,7 +20,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/gomods/api/balancer-api"
+	"github.com/nfwGytautas/mstk/backends/go/balancer-api"
+	"github.com/nfwGytautas/mstk/backends/go/balancer-api/communication"
+	"github.com/nfwGytautas/mstk/backends/go/balancer-api/implementation"
 )
 
 type BalancerImplementation struct {
@@ -28,12 +30,12 @@ type BalancerImplementation struct {
 }
 
 func (bi *BalancerImplementation) GetServiceName() string {
-	return "{{.ServiceName}}"
+	return "calculator"
 }
 
-func (bi *BalancerImplementation) GetShard(ctx *gin.Context) (balancer.Shard, error) {
+func (bi *BalancerImplementation) GetShard(ctx *gin.Context) (implementation.Shard, error) {
 	// TODO: Add balancer filter
-	return balancer.Shard{}, nil
+	return implementation.Shard{}, nil
 }
 
 func main() {
@@ -42,11 +44,15 @@ func main() {
 		log.Panicln("Failed to create balancer")
 	}
 
-	balancer.BalancerFn = &BalancerImplementation{}
+	balancer.Implementation = &BalancerImplementation{}
+
+	// TODO: Specify your communication type
+	balancer.Communication = &communication.HTTPBalancerCommunication{}
 
 	err = balancer.Run()
 	if err != nil {
 		log.Panic(err)
 	}
 }
+
 `

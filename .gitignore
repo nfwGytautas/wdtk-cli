@@ -14,3 +14,5 @@ bin
 
 # Remove MacOs specific files
 .DS_Store
+
+.docker/
