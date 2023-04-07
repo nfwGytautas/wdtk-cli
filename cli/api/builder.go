@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/nfwGytautas/mstk/cli/common"
 )
@@ -29,8 +30,8 @@ type GoBuilder struct {
 Create a GoBuilder
 */
 func CreateBuilder() GoBuilder {
-	// TODO: Find these automatically
-	return GoBuilder{os: "linux", arch: "arm"}
+	// OS for now is always linux since we are building for debian 10 buster
+	return GoBuilder{os: "linux", arch: runtime.GOARCH}
 }
 
 /*

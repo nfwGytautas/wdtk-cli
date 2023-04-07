@@ -18,15 +18,13 @@ import (
 // PUBLIC TYPES
 // ========================================================================
 
-//TODO: Add pepper and salt to authentication
-
 /*
 Struct describing the User table
 */
 type User struct {
 	gorm.Model
 	Identifier string // Identifier for users e.g. email, username, etc.
-	Password   string // Salt&Pepper hashed password
+	Password   string // Salt hashed password
 	Role       string // Role of the user (for applications that don't use Authorization this is useless)
 }
 
@@ -243,8 +241,6 @@ func verifyPassword(password, hashedPassword string) error {
 Creates a hash from password
 */
 func createPasswordHash(psw string) (string, error) {
-	// TODO: Salt & pepper
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(psw), bcrypt.MinCost)
 	if err != nil {
 		return "", err

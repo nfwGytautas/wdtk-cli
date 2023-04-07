@@ -5,12 +5,6 @@
     TODO: Unit tests
     TODO: Export postman configuration
 
-### Security
-    TODO: Salt and pepper authentication
-
-### CLI
-    TODO: Remove docker images with clean/service remove targets
-
 
 ## v0.1.0
 

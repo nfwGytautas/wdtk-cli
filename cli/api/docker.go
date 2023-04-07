@@ -59,6 +59,38 @@ func CreateDocker(contextDir, tag string) Docker {
 }
 
 /*
+Clean docker environment
+*/
+func CleanDocker() error {
+	containerPruneCmd := exec.Command(
+		"docker", "container", "prune", "-f",
+	)
+
+	imagePruneCmd := exec.Command(
+		"docker", "image", "prune", "-a", "-f",
+	)
+
+	// Setup commands
+	err := inMinikube([]*exec.Cmd{containerPruneCmd, imagePruneCmd})
+	if err != nil {
+		return err
+	}
+
+	// Execute commands
+	err = common.ExecCmd(containerPruneCmd)
+	if err != nil {
+		return err
+	}
+
+	err = common.ExecCmd(imagePruneCmd)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
 Write a dockerfile template
 
 context argument is the root directory

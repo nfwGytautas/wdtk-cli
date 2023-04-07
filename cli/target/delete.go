@@ -40,8 +40,6 @@ func DeleteAction(ctx *cli.Context) {
 	// Remove namespace
 	pc.Kubernetes.DeleteNamespace()
 
-	// TODO: Delete docker images
-
 	err = os.Chdir("../")
 	common.PanicOnError(err, "Failed to change directory, the project directory needs to be deleted manually")
 

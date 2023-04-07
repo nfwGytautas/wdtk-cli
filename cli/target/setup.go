@@ -31,7 +31,6 @@ Execute setup target
 func SetupAction(ctx *cli.Context) {
 	defer common.TimeCurrentFn()
 
-	// TODO: Find the MSTK installation path automatically
 	if !common.IsMSTKRoot() {
 		common.LogPanic("setup needs to be ran inside a mstk root directory")
 	}
@@ -76,7 +75,7 @@ func SetupAction(ctx *cli.Context) {
 Returns a list of services in mstk
 */
 func GetMstkServicesList() ([]string, error) {
-	directories, err := common.GetDirectories("gomods/services/")
+	directories, err := common.GetDirectories("gomods/")
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func compileService(path string, wg *sync.WaitGroup) {
 
 	serviceName := filepath.Base(path)
 	targetFile := fmt.Sprintf("%sbin/%s", mstkRoot, serviceName)
-	sourceDir := fmt.Sprintf("./gomods/services/%s/", serviceName)
+	sourceDir := fmt.Sprintf("./gomods/%s/", serviceName)
 
 	builder := api.CreateBuilder()
 	docker := api.CreateDocker(mstkRoot, "mstk")
