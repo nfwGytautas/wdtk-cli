@@ -1,0 +1,15 @@
+{
+    "gopls": {
+        "ui.semanticTokens": true
+    },
+    "cSpell.words": [
+        "GORM",
+        "mstk"
+    ],
+    "autoSnippet.snippets": [
+        {
+            "pattern": "**/*.go",
+            "snippet": "MSTK Go Template"
+        },
+    ],
+}

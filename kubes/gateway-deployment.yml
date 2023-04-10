@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mstk-gateway
+spec:
+  selector:
+    matchLabels:
+      app: mstk-gateway
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mstk-gateway
+    spec:
+      containers:
+      - image: mstk/gateway:0.0.0
+        name: mstk-gateway
+        imagePullPolicy: Never
+        resources:
+          limits:
+            memory: "500M"
+            cpu: "50m"
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: Secret
+        - name: MSTK_USER
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: MstkUser
+        - name: MSTK_PSW
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: MstkPsw
+        - name: TOKEN_LIFESPAN
+          valueFrom:
+            secretKeyRef:
+              name: mstk-project-secret
+              key: Lifespan
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mstk-gateway
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: mstk-gateway
+  type: LoadBalancer

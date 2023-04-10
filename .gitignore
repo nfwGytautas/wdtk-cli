@@ -1,0 +1,18 @@
+# Ignore backup and temporary files
+design/*.drawio.bkp
+design/*.drawio.dtmp
+
+cli/mstk
+
+example/balancer/balancer
+example/calculator/calculator
+
+template/
+
+# Ignore everything except the utility script and template dockerfile
+bin
+
+# Remove MacOs specific files
+.DS_Store
+
+.docker/
