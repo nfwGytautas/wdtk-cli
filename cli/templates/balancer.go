@@ -1,5 +1,7 @@
 package templates
 
+import "os"
+
 // PUBLIC TYPES
 // ========================================================================
 
@@ -20,9 +22,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/backends/go/balancer-api"
-	"github.com/nfwGytautas/mstk/backends/go/balancer-api/communication"
-	"github.com/nfwGytautas/mstk/backends/go/balancer-api/implementation"
+	"github.com/nfwGytautas/webdev-tk/backends/go/balancer-api"
+	"github.com/nfwGytautas/webdev-tk/backends/go/balancer-api/communication"
+	"github.com/nfwGytautas/webdev-tk/backends/go/balancer-api/implementation"
 )
 
 type BalancerImplementation struct {
@@ -30,7 +32,7 @@ type BalancerImplementation struct {
 }
 
 func (bi *BalancerImplementation) GetServiceName() string {
-	return "calculator"
+	return "ExampleService"
 }
 
 func (bi *BalancerImplementation) GetShard(ctx *gin.Context) (implementation.Shard, error) {
@@ -56,3 +58,9 @@ func main() {
 }
 
 `
+
+// PUBLIC FUNCTIONS
+// ========================================================================
+func WriteBalancerTemplate(file string) error {
+	return os.WriteFile(file, []byte(BalancerTemplate), os.ModePerm)
+}
