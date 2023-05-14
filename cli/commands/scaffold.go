@@ -56,6 +56,8 @@ func runScaffold(ctx *cli.Context) error {
 
 	println("--- ")
 
+	println("✅  Scaffolded the project, you can deploy it using 'wdtk deploy [TARGET] [all|services...] '")
+
 	return nil
 }
 
@@ -64,6 +66,16 @@ func serviceCheck(cfg types.WDTKConfig) (types.ServiceCheckStats, error) {
 	var err error
 
 	err = checks.AllServicesCreated(cfg, &stats)
+	if err != nil {
+		return stats, err
+	}
+
+	err = checks.GoWorkIsUpToDate(cfg, &stats)
+	if err != nil {
+		return stats, err
+	}
+
+	err = checks.DeployScriptsExist(cfg, &stats)
 	if err != nil {
 		return stats, err
 	}

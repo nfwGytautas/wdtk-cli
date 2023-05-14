@@ -11,6 +11,7 @@ type WDTKTemplateData struct {
 // Template for balancer
 const WDTKTemplate = `
 # Generic project settings
+package: {{.ProjectName}}.com/{{.ProjectName}}/
 name: {{.ProjectName}}
 
 # List of valid deployment targets, every service needs to have all of these defined in their deployment tag
@@ -19,6 +20,7 @@ deployments:
     # You can define defaults for a target here
     ip: 127.0.0.1
     buildOnHost: true
+    dir: ~/{{.ProjectName}}/%serviceName
 
 # Gateway settings
 apiGateway:
@@ -58,6 +60,9 @@ A project utilizing WebDev Toolkit https://github.com/nfwGytautas/webdev-tk
 // Template for .gitignore in root directory
 const GitIgnore = `
 # deploy related directories
-bin/
 deploy/
+`
+
+// Template for update go mods template
+const UnixUpdateGoMods = `
 `

@@ -23,21 +23,24 @@ type BalancerConfig struct {
 	Language string `yaml:"language"`
 }
 
+type ServiceDescriptionConfig struct {
+	Name   string `yaml:"name"`
+	Source struct {
+		Service  *ServiceConfig  `yaml:"service"`
+		Balancer *BalancerConfig `yaml:"balancer"`
+	} `yaml:"source"`
+	Deployment []DeploymentConfig `yaml:"deployment"`
+}
+
 // WDTK go representation of wdtk.yml file, generated with https://zhwt.github.io/yaml-to-go/
 type WDTKConfig struct {
+	Package     string             `yaml:"package"`
 	Name        string             `yaml:"name"`
 	Deployments []DeploymentConfig `yaml:"deployments"`
 	APIGateway  struct {
 		Deployment []DeploymentConfig `yaml:"deployment"`
 	} `yaml:"apiGateway"`
-	Services []struct {
-		Name   string `yaml:"name"`
-		Source struct {
-			Service  *ServiceConfig  `yaml:"service"`
-			Balancer *BalancerConfig `yaml:"balancer"`
-		} `yaml:"source"`
-		Deployment []DeploymentConfig `yaml:"deployment"`
-	} `yaml:"services"`
+	Services []ServiceDescriptionConfig `yaml:"services"`
 }
 
 // PRIVATE TYPES

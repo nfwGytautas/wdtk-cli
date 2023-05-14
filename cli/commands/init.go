@@ -125,6 +125,31 @@ func createDirectoryStructure() error {
 		return err
 	}
 
+	err = os.Mkdir("tools", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile("tools/UnixUpdateGoMods.sh", []byte(templates.UnixUpdateGoMods), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir("deploy", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir("deploy/bin/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir("deploy/unix/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	err = templates.WriteServiceTemplate("services/ExampleService/service/main.go")
 	if err != nil {
 		return err
@@ -151,6 +176,11 @@ func createDirectoryStructure() error {
 	}
 
 	err = os.WriteFile(".gitignore", []byte(templates.GitIgnore), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile("go.work", []byte(""), os.ModePerm)
 	if err != nil {
 		return err
 	}

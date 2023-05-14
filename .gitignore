@@ -2,12 +2,9 @@
 design/*.drawio.bkp
 design/*.drawio.dtmp
 
-cli/mstk
+cli/wdtk
 
-example/balancer/balancer
-example/calculator/calculator
-
-template/
+test/
 
 # Ignore everything except the utility script and template dockerfile
 bin
@@ -16,5 +13,3 @@ bin
 .DS_Store
 
 .docker/
-
-__pycache__

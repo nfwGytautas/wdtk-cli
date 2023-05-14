@@ -1,6 +1,10 @@
 package file
 
-import "os"
+import (
+	"bytes"
+	"html/template"
+	"os"
+)
 
 // PUBLIC TYPES
 // ========================================================================
@@ -42,6 +46,34 @@ func GetDirectories(root string) ([]string, error) {
 	}
 
 	return files, nil
+}
+
+// Write a template to file
+func WriteTemplate(path, templateString string, data any) error {
+	file, err := os.OpenFile(path, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	t, err := template.New("template").Parse(templateString)
+	if err != nil {
+		return err
+	}
+
+	out := &bytes.Buffer{}
+	err = t.Execute(out, data)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(out.Bytes())
+	if err != nil {
+		return err
+	}
+	file.Sync()
+
+	return nil
 }
 
 // PRIVATE FUNCTIONS
