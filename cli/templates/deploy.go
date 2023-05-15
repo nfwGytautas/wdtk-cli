@@ -30,9 +30,9 @@ BALANCER_SRC_DIR="{{.RootDir}}/services/{{.ServiceName}}/balancer/"
 SERVICE_LANGUAGE="{{.ServiceLang}}"
 SERVICE_SRC_DIR="{{.RootDir}}/services/{{.ServiceName}}/service/"
 
-OUT_DIR="{{.RootDir}}/bin/"
+OUT_DIR="{{.RootDir}}/deploy/bin/"
 
-echo "Deployment of '$SERVICE_NAME'"
+echo "Start of '$SERVICE_NAME'"
 echo
 
 # build balancer
@@ -74,5 +74,7 @@ then
     echo Building
     go build -o $OUT_DIR$OBJ_FILE_NAME .
 fi
+
+echo "End of '$SERVICE_NAME'"
 
 `

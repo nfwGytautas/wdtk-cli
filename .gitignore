@@ -1,6 +1,6 @@
 # Ignore backup and temporary files
-design/*.drawio.bkp
-design/*.drawio.dtmp
+documentation/*.drawio.bkp
+documentation/*.drawio.dtmp
 
 cli/wdtk
 

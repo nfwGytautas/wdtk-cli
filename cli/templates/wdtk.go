@@ -20,7 +20,7 @@ deployments:
     # You can define defaults for a target here
     ip: 127.0.0.1
     buildOnHost: true
-    dir: ~/{{.ProjectName}}/%serviceName
+    dir: ~/{{.ProjectName}}/dev/%serviceName
 
 # Gateway settings
 apiGateway:

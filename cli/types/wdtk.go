@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -10,9 +11,11 @@ import (
 // ========================================================================
 
 type DeploymentConfig struct {
-	Name        string `yaml:"name"`
-	IP          string `yaml:"ip"`
-	BuildOnHost bool   `yaml:"buildOnHost"`
+	Name        string  `yaml:"name"`
+	IP          *string `yaml:"ip,omitempty"`
+	BuildOnHost *bool   `yaml:"buildOnHost,omitempty"`
+	DeployDir   *string `yaml:"dir,omitempty"`
+	Port        *string `yaml:"port,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -59,6 +62,48 @@ func (wdtk *WDTKConfig) Read() error {
 	}
 
 	return yaml.Unmarshal(in, wdtk)
+}
+
+// Get a filled deployment for a specific service
+func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, deployment string) (DeploymentConfig, error) {
+	var result DeploymentConfig
+	var serviceDeployment DeploymentConfig
+
+	// Find the defined deployment
+	for _, itDeployment := range wdtk.Deployments {
+		if itDeployment.Name == deployment {
+			result = itDeployment
+		}
+	}
+
+	for _, itDeployment := range service.Deployment {
+		if itDeployment.Name == deployment {
+			serviceDeployment = itDeployment
+		}
+	}
+
+	if result.Name == "" {
+		return result, errors.New("deployment doesn't exist")
+	}
+
+	// Now override values
+	if serviceDeployment.IP != nil {
+		result.IP = serviceDeployment.IP
+	}
+
+	if serviceDeployment.DeployDir != nil {
+		result.DeployDir = serviceDeployment.DeployDir
+	}
+
+	if serviceDeployment.BuildOnHost != nil {
+		result.BuildOnHost = serviceDeployment.BuildOnHost
+	}
+
+	if serviceDeployment.Port != nil {
+		result.Port = serviceDeployment.Port
+	}
+
+	return result, nil
 }
 
 // PRIVATE FUNCTIONS

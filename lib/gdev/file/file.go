@@ -3,6 +3,7 @@ package file
 import (
 	"bytes"
 	"html/template"
+	"io/fs"
 	"os"
 )
 
@@ -72,6 +73,36 @@ func WriteTemplate(path, templateString string, data any) error {
 		return err
 	}
 	file.Sync()
+
+	return nil
+}
+
+// Append content to file
+func Append(file, content string) error {
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.WriteString(content); err != nil {
+		return err
+	}
+
+	err = f.Close()
+	return err
+}
+
+// Copy source to target
+func CopyFile(source, target string) error {
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(target, data, fs.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
