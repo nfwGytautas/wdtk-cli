@@ -31,6 +31,7 @@ func main() {
 		Commands: []*cli.Command{
 			commands.InitCommand(),
 			commands.ScaffoldCommand(),
+			commands.BuildCommand(),
 			commands.DeployCommand(),
 		},
 	}

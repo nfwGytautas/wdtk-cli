@@ -77,6 +77,34 @@ func WriteTemplate(path, templateString string, data any) error {
 	return nil
 }
 
+// Append a template to file
+func AppendTemplate(path, templateString string, data any) error {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	t, err := template.New("template").Parse(templateString)
+	if err != nil {
+		return err
+	}
+
+	out := &bytes.Buffer{}
+	err = t.Execute(out, data)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(out.Bytes())
+	if err != nil {
+		return err
+	}
+	file.Sync()
+
+	return nil
+}
+
 // Append content to file
 func Append(file, content string) error {
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

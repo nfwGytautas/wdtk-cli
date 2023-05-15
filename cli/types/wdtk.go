@@ -11,11 +11,10 @@ import (
 // ========================================================================
 
 type DeploymentConfig struct {
-	Name        string  `yaml:"name"`
-	IP          *string `yaml:"ip,omitempty"`
-	BuildOnHost *bool   `yaml:"buildOnHost,omitempty"`
-	DeployDir   *string `yaml:"dir,omitempty"`
-	Port        *string `yaml:"port,omitempty"`
+	Name      string  `yaml:"name"`
+	IP        *string `yaml:"ip,omitempty"`
+	DeployDir *string `yaml:"dir,omitempty"`
+	Port      *string `yaml:"port,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -93,10 +92,6 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 
 	if serviceDeployment.DeployDir != nil {
 		result.DeployDir = serviceDeployment.DeployDir
-	}
-
-	if serviceDeployment.BuildOnHost != nil {
-		result.BuildOnHost = serviceDeployment.BuildOnHost
 	}
 
 	if serviceDeployment.Port != nil {
