@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nfwGytautas/mstk/lib/gdev/array"
-	"github.com/nfwGytautas/mstk/lib/gdev/file"
+	"github.com/nfwGytautas/gdev/array"
+	"github.com/nfwGytautas/gdev/file"
 	"github.com/nfwGytautas/webdev-tk/cli/templates"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 )

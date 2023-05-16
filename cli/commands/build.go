@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nfwGytautas/mstk/lib/gdev/array"
-	"github.com/nfwGytautas/mstk/lib/gdev/file"
+	"github.com/nfwGytautas/gdev/array"
+	"github.com/nfwGytautas/gdev/file"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 	"github.com/urfave/cli/v2"
 )

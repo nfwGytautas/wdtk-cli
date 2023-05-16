@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nfwGytautas/gdev/jwt"
 	"github.com/nfwGytautas/mstk/backends/go/balancer-api/communication"
 	"github.com/nfwGytautas/mstk/backends/go/balancer-api/implementation"
-	"github.com/nfwGytautas/mstk/lib/gdev/jwt"
 )
 
 // PUBLIC TYPES

@@ -2,7 +2,7 @@ package microservice
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/lib/gdev/jwt"
+	"github.com/nfwGytautas/gdev/jwt"
 )
 
 // PUBLIC TYPES

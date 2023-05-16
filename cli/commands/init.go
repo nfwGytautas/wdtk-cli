@@ -145,6 +145,11 @@ func createDirectoryStructure() error {
 		return err
 	}
 
+	err = os.Mkdir("deploy/LD/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	err = os.Mkdir("deploy/bin/", os.ModePerm)
 	if err != nil {
 		return err

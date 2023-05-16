@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nfwGytautas/mstk/lib/gdev/array"
-	"github.com/nfwGytautas/mstk/lib/gdev/file"
+	"github.com/nfwGytautas/gdev/array"
+	"github.com/nfwGytautas/gdev/file"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 	"github.com/urfave/cli/v2"
 )
@@ -99,6 +99,17 @@ func runDeploy(ctx *cli.Context) error {
 		}
 	}
 
+	// Deploy gateway
+	gatewayDeployment, err := cfg.GetFilledGatewayDeployment(ctx.Args().Get(0))
+	if err != nil {
+		return err
+	}
+
+	err = deployGateway(gatewayDeployment, logFile)
+	if err != nil {
+		return err
+	}
+
 	println(fmt.Sprintf("--- %d deployed, %d failed ---", numDeployed, numFailed))
 
 	if numFailed != 0 {
@@ -136,6 +147,37 @@ func runDeployScript(cfg *types.WDTKConfig, service *types.ServiceDescriptionCon
 	var outb, errb bytes.Buffer
 
 	cmd := exec.Command("bash", fmt.Sprintf("./%s_DEPLOY_%s.sh", service.Name, deployment.Name))
+	cmd.Dir = abs
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err = cmd.Run()
+
+	if err != nil {
+		file.Append(logFile, outb.String())
+		file.Append(logFile, errb.String())
+		file.Append(logFile, err.Error())
+
+		return err
+	} else {
+		file.Append(logFile, outb.String())
+		file.Append(logFile, errb.String())
+
+		return err
+	}
+}
+
+func deployGateway(deployment types.DeploymentConfig, logFile string) error {
+	abs, err := filepath.Abs("deploy/unix/")
+	if err != nil {
+		return err
+	}
+
+	println("Deploying gateway")
+
+	// Run the deployment script
+	var outb, errb bytes.Buffer
+
+	cmd := exec.Command("bash", fmt.Sprintf("./GATEWAY_%s.sh", deployment.Name))
 	cmd.Dir = abs
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb

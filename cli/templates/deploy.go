@@ -60,3 +60,17 @@ const LocalDeployTemplate = `
 echo Copying {{.InFile}}
 cp {{.InFile}} {{.OutDir}}
 `
+
+/*
+Data of localhost deploy template
+*/
+type GatewayDeployData struct {
+	Deployment string
+	OutDir     string
+}
+
+const LocalDeployGatewayTemplate = `
+echo Copying locator table
+cp ../LD/{{.Deployment}}.json {{.OutDir}}
+cp ../bin/unix/APIGateway {{.OutDir}}
+`

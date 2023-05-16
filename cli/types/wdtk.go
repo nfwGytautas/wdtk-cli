@@ -101,5 +101,43 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 	return result, nil
 }
 
+// Get filled deployment data for api gateway
+func (wdtk *WDTKConfig) GetFilledGatewayDeployment(deployment string) (DeploymentConfig, error) {
+	var result DeploymentConfig
+	var gatewayDeployment DeploymentConfig
+
+	// Find the defined deployment
+	for _, itDeployment := range wdtk.Deployments {
+		if itDeployment.Name == deployment {
+			result = itDeployment
+		}
+	}
+
+	for _, itDeployment := range wdtk.APIGateway.Deployment {
+		if itDeployment.Name == deployment {
+			gatewayDeployment = itDeployment
+		}
+	}
+
+	if result.Name == "" {
+		return result, errors.New("deployment doesn't exist")
+	}
+
+	// Now override values
+	if gatewayDeployment.IP != nil {
+		result.IP = gatewayDeployment.IP
+	}
+
+	if gatewayDeployment.DeployDir != nil {
+		result.DeployDir = gatewayDeployment.DeployDir
+	}
+
+	if gatewayDeployment.Port != nil {
+		result.Port = gatewayDeployment.Port
+	}
+
+	return result, nil
+}
+
 // PRIVATE FUNCTIONS
 // ========================================================================

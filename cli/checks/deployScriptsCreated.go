@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nfwGytautas/mstk/lib/gdev/file"
+	"github.com/nfwGytautas/gdev/file"
 	"github.com/nfwGytautas/webdev-tk/cli/templates"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 )
@@ -110,7 +110,7 @@ func createUnixBuildScript(service types.ServiceDescriptionConfig) error {
 		}
 	}
 
-	return err
+	return nil
 }
 
 func createDeploymentScript(service types.ServiceDescriptionConfig, deployment types.DeploymentConfig) error {

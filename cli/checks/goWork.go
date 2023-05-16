@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/nfwGytautas/mstk/lib/gdev/file"
+	"github.com/nfwGytautas/gdev/file"
 	"github.com/nfwGytautas/webdev-tk/cli/templates"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 )
