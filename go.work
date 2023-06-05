@@ -2,7 +2,3 @@ go 1.20
 
 // CLI
 use ./cli
-
-// Backends
-use ./backends/go/balancer-api
-use ./backends/go/microservice-api
