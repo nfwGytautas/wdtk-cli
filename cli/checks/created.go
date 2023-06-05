@@ -35,65 +35,19 @@ func AllServicesCreated(cfg types.WDTKConfig, stats *types.ServiceCheckStats) er
 				return err
 			}
 
-			err = os.Mkdir(path+"/service", os.ModePerm)
-			if err != nil {
-				return err
-			}
-
-			err = templates.WriteServiceTemplate(path + "/service/main.go")
-			if err != nil {
-				return err
-			}
-
-			if service.Source.Balancer != nil {
-				err := os.Mkdir(path+"/balancer", os.ModePerm)
+			if service.Type == "service" {
+				err := templates.WriteServiceTemplate(path + "/main.go")
 				if err != nil {
 					return err
 				}
-
-				err = templates.WriteBalancerTemplate(path + "/balancer/main.go")
+			} else if service.Type == "balancer" {
+				err := templates.WriteBalancerTemplate(path + "/main.go")
 				if err != nil {
 					return err
 				}
 			}
 
 			stats.NumCreatedServices++
-		} else {
-			modified := false
-
-			if !file.Exists(path + "/service") {
-				err := os.Mkdir(path+"/service", os.ModePerm)
-				if err != nil {
-					return err
-				}
-
-				err = templates.WriteServiceTemplate(path + "/service/main.go")
-				if err != nil {
-					return err
-				}
-
-				modified = true
-			}
-
-			if service.Source.Balancer != nil {
-				if !file.Exists(path + "/balancer") {
-					err := os.Mkdir(path+"/balancer", os.ModePerm)
-					if err != nil {
-						return err
-					}
-
-					err = templates.WriteBalancerTemplate(path + "/balancer/main.go")
-					if err != nil {
-						return err
-					}
-
-					modified = true
-				}
-			}
-
-			if modified {
-				stats.NumModifiedServices++
-			}
 		}
 	}
 

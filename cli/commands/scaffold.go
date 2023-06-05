@@ -80,7 +80,7 @@ func serviceCheck(cfg types.WDTKConfig) (types.ServiceCheckStats, error) {
 		return stats, err
 	}
 
-	err = checks.LocatorTableCreated(cfg, &stats)
+	err = checks.GenerateDynamics(cfg, &stats)
 	if err != nil {
 		return stats, err
 	}

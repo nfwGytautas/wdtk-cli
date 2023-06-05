@@ -145,7 +145,7 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = os.Mkdir("deploy/LD/", os.ModePerm)
+	err = os.Mkdir("deploy/generated/", os.ModePerm)
 	if err != nil {
 		return err
 	}

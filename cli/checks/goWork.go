@@ -22,29 +22,12 @@ func GoWorkIsUpToDate(cfg types.WDTKConfig, stats *types.ServiceCheckStats) erro
 
 	for _, service := range cfg.Services {
 		// Check go.mod
-		if service.Source.Service.Language == "go" {
-			modPath := fmt.Sprintf("services/%s/service", service.Name)
-			goModPath := fmt.Sprintf("services/%s/service/go.mod", service.Name)
+		if service.Language == "go" {
+			modPath := fmt.Sprintf("services/%s", service.Name)
+			goModPath := fmt.Sprintf("services/%s/go.mod", service.Name)
 
 			if !file.Exists(goModPath) {
-				err := writeGoMod(goModPath, cfg.Package, service.Name, "Service")
-				if err != nil {
-					return err
-				}
-			}
-
-			err := appendToGoWork(modPath)
-			if err != nil {
-				return err
-			}
-		}
-
-		if service.Source.Balancer.Language == "go" {
-			modPath := fmt.Sprintf("services/%s/balancer", service.Name)
-			goModPath := fmt.Sprintf("services/%s/balancer/go.mod", service.Name)
-
-			if file.Exists(goModPath) {
-				err := writeGoMod(goModPath, cfg.Package, service.Name, "Balancer")
+				err := writeGoMod(goModPath, cfg.Package, service.Name)
 				if err != nil {
 					return err
 				}
@@ -82,13 +65,12 @@ func resetGoWork() error {
 	return f.Close()
 }
 
-func writeGoMod(path, pckg, name, t string) error {
+func writeGoMod(path, pckg, name string) error {
 	if !file.Exists(path) {
 		data := templates.GoModFileData{
 			Root:        pckg,
 			ServiceName: name,
 			GoVersion:   "1.20",
-			Suffix:      t,
 		}
 
 		// Create go.mod

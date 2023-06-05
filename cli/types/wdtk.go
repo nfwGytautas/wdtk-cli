@@ -10,6 +10,11 @@ import (
 // PUBLIC TYPES
 // ========================================================================
 
+type AuthenticationEntry struct {
+	DeploymentConfig `yaml:",inline"`
+	ConnectionString string `yaml:"connectionString"`
+}
+
 type DeploymentConfig struct {
 	Name      string  `yaml:"name"`
 	IP        *string `yaml:"ip,omitempty"`
@@ -17,20 +22,10 @@ type DeploymentConfig struct {
 	Port      *string `yaml:"port,omitempty"`
 }
 
-type ServiceConfig struct {
-	Language string `yaml:"language"`
-}
-
-type BalancerConfig struct {
-	Language string `yaml:"language"`
-}
-
 type ServiceDescriptionConfig struct {
-	Name   string `yaml:"name"`
-	Source struct {
-		Service  *ServiceConfig  `yaml:"service"`
-		Balancer *BalancerConfig `yaml:"balancer"`
-	} `yaml:"source"`
+	Name       string             `yaml:"name"`
+	Type       string             `yaml:"type"`
+	Language   string             `yaml:"language"`
 	Deployment []DeploymentConfig `yaml:"deployment"`
 }
 
@@ -42,6 +37,9 @@ type WDTKConfig struct {
 	APIGateway  struct {
 		Deployment []DeploymentConfig `yaml:"deployment"`
 	} `yaml:"apiGateway"`
+	Authentication struct {
+		Entry []AuthenticationEntry `yaml:"deployment"`
+	} `yaml:"authentication"`
 	Services []ServiceDescriptionConfig `yaml:"services"`
 }
 

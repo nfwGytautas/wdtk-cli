@@ -99,7 +99,7 @@ func runDeploy(ctx *cli.Context) error {
 		}
 	}
 
-	// Deploy gateway
+	// Deploy wdtk
 	gatewayDeployment, err := cfg.GetFilledGatewayDeployment(ctx.Args().Get(0))
 	if err != nil {
 		return err
@@ -172,12 +172,12 @@ func deployGateway(deployment types.DeploymentConfig, logFile string) error {
 		return err
 	}
 
-	println("Deploying gateway")
+	println("Deploying WDTK services")
 
 	// Run the deployment script
 	var outb, errb bytes.Buffer
 
-	cmd := exec.Command("bash", fmt.Sprintf("./GATEWAY_%s.sh", deployment.Name))
+	cmd := exec.Command("bash", fmt.Sprintf("./WDTK_%s.sh", deployment.Name))
 	cmd.Dir = abs
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb

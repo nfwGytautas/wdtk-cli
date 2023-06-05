@@ -7,10 +7,9 @@ package templates
 Data of service template
 */
 type UNIXDeployData struct {
-	RootDir      string
-	ServiceName  string
-	BalancerLang string
-	ServiceLang  string
+	RootDir     string
+	ServiceName string
+	ServiceLang string
 }
 
 /*
@@ -25,14 +24,13 @@ const UnixHeaderDeployTemplate = `#/bin/bash
 Data of go build template
 */
 type GoBuildData struct {
-	BuildName   string
 	ServiceName string
 	SourceDir   string
 	OutDir      string
 }
 
 const GoBuildDeployTemplate = `
-echo Building {{.BuildName}}
+echo Building {{.ServiceName}}
 
 cd {{.SourceDir}}
 
@@ -43,7 +41,7 @@ echo Downloading dependencies
 go get ./
 
 echo Building
-go build -o {{.OutDir}}{{.ServiceName}}_{{.BuildName}} .
+go build -o {{.OutDir}}{{.ServiceName}} .
 
 echo
 `
@@ -52,25 +50,32 @@ echo
 Data of localhost deploy template
 */
 type DeployData struct {
-	InFile string
-	OutDir string
+	Deployment string
+	InFile     string
+	OutDir     string
 }
 
 const LocalDeployTemplate = `
 echo Copying {{.InFile}}
+cp ../generated/ServiceConfig_{{.Deployment}}.json {{.OutDir}}ServiceConfig.json
 cp {{.InFile}} {{.OutDir}}
 `
 
 /*
 Data of localhost deploy template
 */
-type GatewayDeployData struct {
+type WDTKDeployData struct {
 	Deployment string
-	OutDir     string
+	GatewayDir string
+	AuthDir    string
 }
 
-const LocalDeployGatewayTemplate = `
+const LocalDeployWDTKTemplate = `
 echo Copying locator table
-cp ../LD/{{.Deployment}}.json {{.OutDir}}
-cp ../bin/unix/APIGateway {{.OutDir}}
+cp ../generated/LocatorTable_{{.Deployment}}.json {{.GatewayDir}}LocatorTable.json
+cp ../bin/unix/APIGateway {{.GatewayDir}}
+
+echo Copying authentication service
+cp ../generated/AuthConfig_{{.Deployment}}.json {{.AuthDir}}AuthConfig.json
+cp ../bin/unix/Auth {{.AuthDir}}
 `

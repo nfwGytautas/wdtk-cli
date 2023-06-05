@@ -57,22 +57,10 @@ func createUnixBuildScript(service types.ServiceDescriptionConfig) error {
 		return err
 	}
 
-	balancerLang := ""
-	serviceLang := ""
-
-	if service.Source.Balancer != nil {
-		balancerLang = service.Source.Balancer.Language
-	}
-
-	if service.Source.Service != nil {
-		serviceLang = service.Source.Service.Language
-	}
-
 	data := templates.UNIXDeployData{
-		ServiceName:  service.Name,
-		RootDir:      currentDir,
-		BalancerLang: balancerLang,
-		ServiceLang:  serviceLang,
+		ServiceName: service.Name,
+		RootDir:     currentDir,
+		ServiceLang: service.Language,
 	}
 
 	outFile := fmt.Sprintf("deploy/unix/%s_BUILD_UNIX.sh", service.Name)
@@ -82,25 +70,10 @@ func createUnixBuildScript(service types.ServiceDescriptionConfig) error {
 		return err
 	}
 
-	if balancerLang == "go" {
+	if service.Language == "go" {
 		goBuildData := templates.GoBuildData{
-			BuildName:   "balancer",
 			ServiceName: service.Name,
-			SourceDir:   currentDir + "/services/" + service.Name + "/balancer/",
-			OutDir:      currentDir + "/deploy/bin/unix/",
-		}
-
-		err = file.AppendTemplate(outFile, templates.GoBuildDeployTemplate, goBuildData)
-		if err != nil {
-			return err
-		}
-	}
-
-	if serviceLang == "go" {
-		goBuildData := templates.GoBuildData{
-			BuildName:   "service",
-			ServiceName: service.Name,
-			SourceDir:   currentDir + "/services/" + service.Name + "/service/",
+			SourceDir:   currentDir + "/services/" + service.Name + "/",
 			OutDir:      currentDir + "/deploy/bin/unix/",
 		}
 
@@ -140,28 +113,15 @@ func createDeploymentScript(service types.ServiceDescriptionConfig, deployment t
 		return err
 	}
 
-	if service.Source.Balancer != nil {
-		deploymentData := templates.DeployData{
-			InFile: fmt.Sprintf("../bin/unix/%s_balancer", service.Name),
-			OutDir: rootDeploymentDirectory,
-		}
-
-		err = file.AppendTemplate(outFile, templates.LocalDeployTemplate, deploymentData)
-		if err != nil {
-			return err
-		}
+	deploymentData := templates.DeployData{
+		Deployment: deployment.Name,
+		InFile:     fmt.Sprintf("../bin/unix/%s", service.Name),
+		OutDir:     rootDeploymentDirectory,
 	}
 
-	if service.Source.Service != nil {
-		deploymentData := templates.DeployData{
-			InFile: fmt.Sprintf("../bin/unix/%s_service", service.Name),
-			OutDir: rootDeploymentDirectory,
-		}
-
-		err = file.AppendTemplate(outFile, templates.LocalDeployTemplate, deploymentData)
-		if err != nil {
-			return err
-		}
+	err = file.AppendTemplate(outFile, templates.LocalDeployTemplate, deploymentData)
+	if err != nil {
+		return err
 	}
 
 	return nil
