@@ -18,27 +18,31 @@ const ServiceTemplate = `
 package main
 
 import (
-	"log"
+	"net/http"
 
 	"github.com/nfwGytautas/wdtk-go-backend/microservice"
 )
 
 type Microservice struct {
-	// TODO: Define the microservice
+	// TODO: Define the microservice context this can be accessed by every endpoint
+}
+
+func exampleEndpoint(e *microservice.EndpointExecutor) {
+	e.Return(http.StatusOK, nil)
 }
 
 func main() {
-	s, err := microservice.RegisterService(&Microservice{})
-	if err != nil {
-		log.Panicln("Failed to create a service")
-	}
-
-	// Specify microservice type
-	s.CommunicationType = microservice.COMM_TYPE_HTTP
-
-	err = s.Run()
-	if err != nil {
-		log.Panic(err)
+	if microservice.RegisterService(microservice.ServiceDescription{
+		ServiceContext: &Microservice{},
+	}, []microservice.ServiceEndpoint{
+		{
+			Type:            microservice.ENDPOINT_TYPE_GET,
+			Name:            "ExampleEndpoint/:id",
+			Fn:              exampleEndpoint,
+			EndpointContext: nil, // The struct that is passed here will be shared for every call to this endpoint
+		},
+	}) != nil {
+		panic("Failed to run service")
 	}
 }
 `
