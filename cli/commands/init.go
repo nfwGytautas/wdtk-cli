@@ -68,9 +68,15 @@ func runInit(ctx *cli.Context) error {
 func writeConfigFile(projectName string) error {
 	println("✏️  Writing 'wdtk.yml'")
 
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	// Write wdtk.yml template
 	data := templates.WDTKTemplateData{}
 	data.ProjectName = projectName
+	data.CurrentDir = currentDir
 
 	file, err := os.OpenFile("wdtk.yml", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -126,11 +132,6 @@ func createDirectoryStructure() error {
 	}
 
 	err = os.Mkdir("tools", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile("tools/UnixUpdateGoMods.sh", []byte(templates.UnixUpdateGoMods), os.ModePerm)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ package templates
 
 // Data for balancer template
 type WDTKTemplateData struct {
+	CurrentDir  string
 	ProjectName string
 }
 
@@ -19,7 +20,7 @@ deployments:
   - name: dev
     # You can define defaults for a target here
     ip: 127.0.0.1
-    dir: ~/{{.ProjectName}}/dev/%serviceName
+    dir: {{.CurrentDir}}/{{.ProjectName}}/dev/%serviceName
 
 # Gateway settings
 apiGateway:
@@ -36,12 +37,10 @@ authentication:
 
 # Services
 services:
+  # Describe services here
   - name: ExampleService
-    source:
-      service:
-        language: go
-      balancer: # <- Can also specify null to indicate that the service has no balancer
-        language: go
+    type: service
+    language: go
     deployment:
       - name: dev
         port: 8090
