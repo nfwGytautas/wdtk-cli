@@ -20,28 +20,23 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/webdev-tk/backends/go/microservice-api"
+	"github.com/nfwGytautas/wdtk-go-backend/microservice"
 )
 
 type Microservice struct {
-	// TODO: Add your microservice data
-}
-
-func (m *Microservice) SetupRoutes(r *gin.Engine) {
-	// TODO: Setup routes
+	// TODO: Define the microservice
 }
 
 func main() {
-	// TODO: Specify your microservice type
-	microservice, err := microservice.CreateHTTPMicroservice()
+	s, err := microservice.RegisterService(&Microservice{})
 	if err != nil {
 		log.Panicln("Failed to create a service")
 	}
 
-	microservice.Implementation = &Microservice{}
+	// Specify microservice type
+	s.CommunicationType = microservice.COMM_TYPE_HTTP
 
-	err = microservice.Run()
+	err = s.Run()
 	if err != nil {
 		log.Panic(err)
 	}
