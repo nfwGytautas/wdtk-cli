@@ -41,13 +41,6 @@ func runInit(ctx *cli.Context) error {
 	)
 
 	projectName = ctx.String("name")
-	if ctx.String("name") == "" {
-		projectName, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-		projectName = filepath.Base(projectName)
-	}
 
 	fmt.Printf("🛠️  Initializing new project '%s'\n", projectName)
 	err = writeConfigFile(projectName)
@@ -75,8 +68,14 @@ func writeConfigFile(projectName string) error {
 
 	// Write wdtk.yml template
 	data := templates.WDTKTemplateData{}
-	data.ProjectName = projectName
 	data.CurrentDir = currentDir
+	data.ProjectName = projectName
+
+	if data.ProjectName == "" {
+		data.ProjectName = filepath.Base(currentDir)
+	} else {
+		data.CurrentDir = data.CurrentDir + data.ProjectName + "/"
+	}
 
 	file, err := os.OpenFile("wdtk.yml", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -116,22 +115,7 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = os.Mkdir("services/ExampleService/service/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("services/ExampleService/balancer/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
 	err = os.Mkdir("frontend", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("tools", os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -166,12 +150,7 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = templates.WriteServiceTemplate("services/ExampleService/service/main.go")
-	if err != nil {
-		return err
-	}
-
-	err = templates.WriteServiceTemplate("services/ExampleService/balancer/main.go")
+	err = templates.WriteServiceTemplate("services/ExampleService/main.go")
 	if err != nil {
 		return err
 	}
