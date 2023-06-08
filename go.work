@@ -2,14 +2,3 @@ go 1.20
 
 // CLI
 use ./cli
-
-// Services
-use ./gomods/gateway
-use ./gomods/locator
-
-// Backends
-use ./backends/go/balancer-api
-use ./backends/go/microservice-api
-
-// Libs
-use ./lib/gdev

@@ -1,5 +1,7 @@
 package templates
 
+import "os"
+
 // PUBLIC TYPES
 // ========================================================================
 
@@ -19,7 +21,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfwGytautas/mstk/backends/go/microservice-api"
+	"github.com/nfwGytautas/webdev-tk/backends/go/microservice-api"
 )
 
 type Microservice struct {
@@ -45,3 +47,15 @@ func main() {
 	}
 }
 `
+
+// Template for README.md in services directory
+const ServicesReadME = `
+# Services
+Directory for all services
+`
+
+// PUBLIC FUNCTIONS
+// ========================================================================
+func WriteServiceTemplate(file string) error {
+	return os.WriteFile(file, []byte(ServiceTemplate), os.ModePerm)
+}

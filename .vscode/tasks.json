@@ -16,7 +16,7 @@
             "args": [
                 "build",
                 "-o",
-                "mstk",
+                "wdtk",
                 "*.go",
             ],
             "options": {
