@@ -34,6 +34,7 @@ authentication:
   deployment:
     - name: dev
       connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
+	  port: 8081
 
 # Services
 services:

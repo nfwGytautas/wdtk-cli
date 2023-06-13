@@ -60,6 +60,8 @@ func createLocatorTable(cfg types.WDTKConfig, stats *types.ServiceCheckStats) er
 	println("📍  Writing locator table")
 
 	for _, deployment := range cfg.Deployments {
+
+		// Services
 		ld := locatorData{}
 		for _, service := range cfg.Services {
 			serviceDeployment, err := cfg.GetFilledDeployment(service, deployment.Name)
@@ -72,6 +74,17 @@ func createLocatorTable(cfg types.WDTKConfig, stats *types.ServiceCheckStats) er
 				FullRequestIp: *serviceDeployment.IP + ":" + *serviceDeployment.Port,
 			})
 		}
+
+		// WDTK
+		authDeployment, err := cfg.GetFilledAuthDeployment(deployment.Name)
+		if err != nil {
+			return err
+		}
+
+		ld.Mapping = append(ld.Mapping, locatorEntry{
+			ServiceName:   "Authentication",
+			FullRequestIp: *authDeployment.IP + ":" + *authDeployment.Port,
+		})
 
 		// Write
 		file, err := json.MarshalIndent(ld, "", "    ")

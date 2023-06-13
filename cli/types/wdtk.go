@@ -137,5 +137,43 @@ func (wdtk *WDTKConfig) GetFilledGatewayDeployment(deployment string) (Deploymen
 	return result, nil
 }
 
+// Get filled deployment data for authentication
+func (wdtk *WDTKConfig) GetFilledAuthDeployment(deployment string) (DeploymentConfig, error) {
+	var result DeploymentConfig
+	var authDeployment AuthenticationEntry
+
+	// Find the defined deployment
+	for _, itDeployment := range wdtk.Deployments {
+		if itDeployment.Name == deployment {
+			result = itDeployment
+		}
+	}
+
+	for _, itDeployment := range wdtk.Authentication.Entry {
+		if itDeployment.Name == deployment {
+			authDeployment = itDeployment
+		}
+	}
+
+	if result.Name == "" {
+		return result, errors.New("deployment doesn't exist")
+	}
+
+	// Now override values
+	if authDeployment.IP != nil {
+		result.IP = authDeployment.IP
+	}
+
+	if authDeployment.DeployDir != nil {
+		result.DeployDir = authDeployment.DeployDir
+	}
+
+	if authDeployment.Port != nil {
+		result.Port = authDeployment.Port
+	}
+
+	return result, nil
+}
+
 // PRIVATE FUNCTIONS
 // ========================================================================
