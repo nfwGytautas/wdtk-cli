@@ -2,12 +2,11 @@ package checks
 
 import (
 	"bytes"
-	"os"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/nfwGytautas/gdev/file"
-	"github.com/nfwGytautas/webdev-tk/cli/templates"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 )
 
@@ -18,60 +17,37 @@ import (
 // ========================================================================
 
 // Build scripts for WDTK modules
-func WDTKBuild(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
-	println("📕  Creating WDTK modules build script")
+func PullWDTKServices(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
+	println("📕  Pulling WDTK services")
 
-	currentDir, err := os.Getwd()
+	abs, err := filepath.Abs("deploy/")
 	if err != nil {
 		return err
 	}
 
-	data := templates.UNIXDeployData{
-		RootDir: currentDir,
-	}
-
-	outFile := "deploy/unix/WDTK_BUILD_UNIX.sh"
-
-	err = file.WriteTemplate(outFile, templates.UnixHeaderDeployTemplate, data)
-	if err != nil {
-		return err
-	}
-
-	err = file.AppendTemplate(outFile, templates.WDTKBuildTemplate, nil)
-	if err != nil {
-		return err
-	}
-
-	abs, err := filepath.Abs("deploy/unix/")
-	if err != nil {
-		return err
-	}
-
-	println("🔨  Building WDTK services")
-
-	// Run the deployment script
 	var outb, errb bytes.Buffer
+	var cmd *exec.Cmd
 
-	cmd := exec.Command("bash", "./WDTK_BUILD_UNIX.sh")
-	cmd.Dir = abs
+	if !file.Exists(abs + "/wdtk-services/") {
+		cmd = exec.Command("git", "clone", "https://github.com/nfwGytautas/wdtk-services.git")
+		cmd.Dir = abs
+	} else {
+		cmd = exec.Command("git", "pull")
+		cmd.Dir = abs + "/wdtk-services/"
+	}
+
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
 	err = cmd.Run()
 
-	// if err != nil {
-	// 	file.Append(logFile, outb.String())
-	// 	file.Append(logFile, errb.String())
-	// 	file.Append(logFile, err.Error())
+	if err != nil {
+		fmt.Println(outb.String())
+		fmt.Println(errb.String())
+		fmt.Println(err.Error())
+		return err
+	}
 
-	// 	return err
-	// } else {
-	// 	file.Append(logFile, outb.String())
-	// 	file.Append(logFile, errb.String())
-
-	// 	return err
-	// }
-
-	return err
+	return nil
 }
 
 // PRIVATE FUNCTIONS

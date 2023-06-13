@@ -23,7 +23,7 @@ import (
 func AllServicesCreated(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
 	serviceNames := []string{}
 
-	for _, service := range cfg.Services {
+	for _, service := range cfg.GetUserServices() {
 		serviceNames = append(serviceNames, service.Name)
 		path := fmt.Sprintf("services/%s", service.Name)
 

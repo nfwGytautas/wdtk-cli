@@ -19,7 +19,7 @@ import (
 // PUBLIC FUNCTIONS
 // ========================================================================
 
-// Checks if all services are created that have been specified
+// Checks if all services have deployment scripts
 func DeployScriptsExist(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
 	println("📦  Creating deployment scripts")
 
@@ -27,9 +27,16 @@ func DeployScriptsExist(cfg types.WDTKConfig, stats *types.ServiceCheckStats) er
 		// Doesn't exist create
 		stats.NumCreatedDeployScripts++
 
-		err := createUnixBuildScript(service)
-		if err != nil {
-			return err
+		if service.Type != types.WDTK_SERVICE_IDENTIFIER {
+			err := createUnixBuildScript(service)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := createWdtkUnixBuildScript(service)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, deployment := range cfg.Deployments {
@@ -86,6 +93,39 @@ func createUnixBuildScript(service types.ServiceDescriptionConfig) error {
 	return nil
 }
 
+func createWdtkUnixBuildScript(service types.ServiceDescriptionConfig) error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	data := templates.UNIXDeployData{
+		ServiceName: service.Name,
+		RootDir:     currentDir,
+		ServiceLang: service.Language,
+	}
+
+	outFile := fmt.Sprintf("deploy/unix/%s_BUILD_UNIX.sh", service.Name)
+
+	err = file.WriteTemplate(outFile, templates.UnixHeaderDeployTemplate, data)
+	if err != nil {
+		return err
+	}
+
+	goBuildData := templates.GoBuildData{
+		ServiceName: service.Name,
+		SourceDir:   currentDir + "/deploy/wdtk-services/" + strings.ToLower(service.Name) + "/",
+		OutDir:      currentDir + "/deploy/bin/unix/",
+	}
+
+	err = file.AppendTemplate(outFile, templates.GoBuildDeployTemplate, goBuildData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createDeploymentScript(service types.ServiceDescriptionConfig, deployment types.DeploymentConfig) error {
 	// TODO: Remote deploy
 
@@ -114,9 +154,10 @@ func createDeploymentScript(service types.ServiceDescriptionConfig, deployment t
 	}
 
 	deploymentData := templates.DeployData{
-		Deployment: deployment.Name,
-		InFile:     fmt.Sprintf("../bin/unix/%s", service.Name),
-		OutDir:     rootDeploymentDirectory,
+		ServiceName: service.Name,
+		Deployment:  deployment.Name,
+		InFile:      fmt.Sprintf("../bin/unix/%s", service.Name),
+		OutDir:      rootDeploymentDirectory,
 	}
 
 	err = file.AppendTemplate(outFile, templates.LocalDeployTemplate, deploymentData)

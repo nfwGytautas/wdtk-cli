@@ -85,7 +85,7 @@ func serviceCheck(cfg types.WDTKConfig) (types.ServiceCheckStats, error) {
 		return stats, err
 	}
 
-	err = checks.WDTKBuild(cfg, &stats)
+	err = checks.PullWDTKServices(cfg, &stats)
 	if err != nil {
 		return stats, err
 	}

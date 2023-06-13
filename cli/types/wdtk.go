@@ -10,16 +10,12 @@ import (
 // PUBLIC TYPES
 // ========================================================================
 
-type AuthenticationEntry struct {
-	DeploymentConfig `yaml:",inline"`
-	ConnectionString string `yaml:"connectionString"`
-}
-
 type DeploymentConfig struct {
-	Name      string  `yaml:"name"`
-	IP        *string `yaml:"ip,omitempty"`
-	DeployDir *string `yaml:"dir,omitempty"`
-	Port      *string `yaml:"port,omitempty"`
+	Name      string                 `yaml:"name"`
+	IP        *string                `yaml:"ip,omitempty"`
+	DeployDir *string                `yaml:"dir,omitempty"`
+	Port      *string                `yaml:"port,omitempty"`
+	Config    map[string]interface{} `yaml:"config,omitempty"`
 }
 
 type ServiceDescriptionConfig struct {
@@ -31,20 +27,17 @@ type ServiceDescriptionConfig struct {
 
 // WDTK go representation of wdtk.yml file, generated with https://zhwt.github.io/yaml-to-go/
 type WDTKConfig struct {
-	Package     string             `yaml:"package"`
-	Name        string             `yaml:"name"`
-	Deployments []DeploymentConfig `yaml:"deployments"`
-	APIGateway  struct {
-		Deployment []DeploymentConfig `yaml:"deployment"`
-	} `yaml:"apiGateway"`
-	Authentication struct {
-		Entry []AuthenticationEntry `yaml:"deployment"`
-	} `yaml:"authentication"`
-	Services []ServiceDescriptionConfig `yaml:"services"`
+	Package     string                     `yaml:"package"`
+	Name        string                     `yaml:"name"`
+	Deployments []DeploymentConfig         `yaml:"deployments"`
+	Services    []ServiceDescriptionConfig `yaml:"services"`
 }
 
 // PRIVATE TYPES
 // ========================================================================
+
+const WDTK_SERVICE_IDENTIFIER = "wdtk"
+const WDTK_GATEWAY_SERVICE_NAME = "Gateway"
 
 // PUBLIC FUNCTIONS
 // ========================================================================
@@ -59,6 +52,26 @@ func (wdtk *WDTKConfig) Read() error {
 	}
 
 	return yaml.Unmarshal(in, wdtk)
+}
+
+func (wdtk *WDTKConfig) GetGatewayService() (ServiceDescriptionConfig, error) {
+	for _, service := range wdtk.Services {
+		if service.Name == WDTK_GATEWAY_SERVICE_NAME {
+			return service, nil
+		}
+	}
+
+	return ServiceDescriptionConfig{}, errors.New("failed to get gateway service")
+}
+
+func (wdtk *WDTKConfig) GetUserServices() []ServiceDescriptionConfig {
+	var result []ServiceDescriptionConfig
+	for _, service := range wdtk.Services {
+		if service.Type != WDTK_SERVICE_IDENTIFIER {
+			result = append(result, service)
+		}
+	}
+	return result
 }
 
 // Get a filled deployment for a specific service
@@ -96,80 +109,11 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 		result.Port = serviceDeployment.Port
 	}
 
-	return result, nil
-}
-
-// Get filled deployment data for api gateway
-func (wdtk *WDTKConfig) GetFilledGatewayDeployment(deployment string) (DeploymentConfig, error) {
-	var result DeploymentConfig
-	var gatewayDeployment DeploymentConfig
-
-	// Find the defined deployment
-	for _, itDeployment := range wdtk.Deployments {
-		if itDeployment.Name == deployment {
-			result = itDeployment
-		}
-	}
-
-	for _, itDeployment := range wdtk.APIGateway.Deployment {
-		if itDeployment.Name == deployment {
-			gatewayDeployment = itDeployment
-		}
-	}
-
-	if result.Name == "" {
-		return result, errors.New("deployment doesn't exist")
-	}
-
-	// Now override values
-	if gatewayDeployment.IP != nil {
-		result.IP = gatewayDeployment.IP
-	}
-
-	if gatewayDeployment.DeployDir != nil {
-		result.DeployDir = gatewayDeployment.DeployDir
-	}
-
-	if gatewayDeployment.Port != nil {
-		result.Port = gatewayDeployment.Port
-	}
-
-	return result, nil
-}
-
-// Get filled deployment data for authentication
-func (wdtk *WDTKConfig) GetFilledAuthDeployment(deployment string) (DeploymentConfig, error) {
-	var result DeploymentConfig
-	var authDeployment AuthenticationEntry
-
-	// Find the defined deployment
-	for _, itDeployment := range wdtk.Deployments {
-		if itDeployment.Name == deployment {
-			result = itDeployment
-		}
-	}
-
-	for _, itDeployment := range wdtk.Authentication.Entry {
-		if itDeployment.Name == deployment {
-			authDeployment = itDeployment
-		}
-	}
-
-	if result.Name == "" {
-		return result, errors.New("deployment doesn't exist")
-	}
-
-	// Now override values
-	if authDeployment.IP != nil {
-		result.IP = authDeployment.IP
-	}
-
-	if authDeployment.DeployDir != nil {
-		result.DeployDir = authDeployment.DeployDir
-	}
-
-	if authDeployment.Port != nil {
-		result.Port = authDeployment.Port
+	// TODO: Fill and override if defined
+	if serviceDeployment.Config != nil {
+		result.Config = serviceDeployment.Config
+	} else {
+		result.Config = make(map[string]interface{})
 	}
 
 	return result, nil

@@ -35,13 +35,22 @@ echo Building {{.ServiceName}}
 cd {{.SourceDir}}
 
 echo Running go tidy
-go mod tidy
+if ! go mod tidy
+then
+	exit 1
+fi
 
 echo Downloading dependencies
-go get ./
+if ! go get ./
+then
+	exit 2
+fi
 
 echo Building
-go build -o {{.OutDir}}{{.ServiceName}} .
+if ! go build -o {{.OutDir}}{{.ServiceName}} .
+then
+	exit 3
+fi
 
 echo
 `
@@ -50,32 +59,14 @@ echo
 Data of localhost deploy template
 */
 type DeployData struct {
-	Deployment string
-	InFile     string
-	OutDir     string
+	ServiceName string
+	Deployment  string
+	InFile      string
+	OutDir      string
 }
 
 const LocalDeployTemplate = `
 echo Copying {{.InFile}}
-cp ../generated/ServiceConfig_{{.Deployment}}.json {{.OutDir}}/ServiceConfig.json
+cp ../generated/{{.ServiceName}}_ServiceConfig_{{.Deployment}}.json {{.OutDir}}/ServiceConfig.json
 cp {{.InFile}} {{.OutDir}}
-`
-
-/*
-Data of localhost deploy template
-*/
-type WDTKDeployData struct {
-	Deployment string
-	GatewayDir string
-	AuthDir    string
-}
-
-const LocalDeployWDTKTemplate = `
-echo Copying locator table
-cp ../generated/LocatorTable_{{.Deployment}}.json {{.GatewayDir}}/LocatorTable.json
-cp ../bin/unix/APIGateway {{.GatewayDir}}
-
-echo Copying authentication service
-cp ../generated/AuthConfig_{{.Deployment}}.json {{.AuthDir}}/AuthConfig.json
-cp ../bin/unix/Auth {{.AuthDir}}
 `

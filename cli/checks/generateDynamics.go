@@ -4,31 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/nfwGytautas/gdev/file"
-	"github.com/nfwGytautas/webdev-tk/cli/templates"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 )
 
 // PRIVATE TYPES
 // ========================================================================
 type locatorEntry struct {
-	ServiceName   string `json:"Service"`
-	FullRequestIp string `json:"IP"`
-}
-
-type locatorData struct {
-	Mapping []locatorEntry `json:"Mapping"`
-}
-
-type generalConfig struct {
-	GatewayIp string `json:"Gateway"`
-}
-
-type authConfig struct {
-	generalConfig
-	ConnectionString string `json:"ConnectionString"`
+	ServiceName   string `json:"service"`
+	FullRequestIp string `json:"ip"`
 }
 
 // PUBLIC FUNCTIONS
@@ -36,152 +20,61 @@ type authConfig struct {
 
 // Generates dynamic files and stores them in generated
 func GenerateDynamics(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
-	err := createLocatorTable(cfg, stats)
+	gatewayService, err := cfg.GetGatewayService()
 	if err != nil {
 		return err
 	}
-
-	err = createAuthConfig(cfg, stats)
-	if err != nil {
-		return err
-	}
-
-	err = createServiceConfig(cfg, stats)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// PRIVATE FUNCTIONS
-// ========================================================================
-func createLocatorTable(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
-	println("📍  Writing locator table")
 
 	for _, deployment := range cfg.Deployments {
+		gatewayDeployment, err := cfg.GetFilledDeployment(gatewayService, deployment.Name)
+		if err != nil {
+			return err
+		}
 
 		// Services
-		ld := locatorData{}
+		var locatorEntries []locatorEntry
 		for _, service := range cfg.Services {
+			if service.Name == gatewayService.Name {
+				continue
+			}
+
 			serviceDeployment, err := cfg.GetFilledDeployment(service, deployment.Name)
 			if err != nil {
 				return err
 			}
 
-			ld.Mapping = append(ld.Mapping, locatorEntry{
+			locatorEntries = append(locatorEntries, locatorEntry{
 				ServiceName:   service.Name,
 				FullRequestIp: *serviceDeployment.IP + ":" + *serviceDeployment.Port,
 			})
+
+			configCopy := serviceDeployment.Config
+			configCopy["runAddress"] = *serviceDeployment.IP + ":" + *serviceDeployment.Port
+			configCopy["gatewayIp"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
+
+			// Write
+			file, err := json.MarshalIndent(configCopy, "", "    ")
+			if err != nil {
+				return err
+			}
+
+			err = os.WriteFile(fmt.Sprintf("deploy/generated/%s_ServiceConfig_%s.json", service.Name, deployment.Name), file, 0644)
+			if err != nil {
+				return err
+			}
 		}
 
-		// WDTK
-		authDeployment, err := cfg.GetFilledAuthDeployment(deployment.Name)
+		gatewayConfigCopy := gatewayDeployment.Config
+		gatewayConfigCopy["runAddress"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
+		gatewayConfigCopy["locatorTable"] = locatorEntries
+
+		// Write gateway config
+		file, err := json.MarshalIndent(gatewayConfigCopy, "", "    ")
 		if err != nil {
 			return err
 		}
 
-		ld.Mapping = append(ld.Mapping, locatorEntry{
-			ServiceName:   "Authentication",
-			FullRequestIp: *authDeployment.IP + ":" + *authDeployment.Port,
-		})
-
-		// Write
-		file, err := json.MarshalIndent(ld, "", "    ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(fmt.Sprintf("deploy/generated/LocatorTable_%s.json", deployment.Name), file, 0644)
-		if err != nil {
-			return err
-		}
-
-		// Create deployment script
-		gatewayDeployment, err := cfg.GetFilledGatewayDeployment(deployment.Name)
-		if err != nil {
-			return err
-		}
-
-		err = createDeployment(gatewayDeployment)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func createDeployment(deployment types.DeploymentConfig) error {
-	// TODO: Remote deploy
-
-	gatewayDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", "Gateway", -1)
-	authDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", "Authentication", -1)
-
-	err := os.MkdirAll(gatewayDeploymentDirectory, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.MkdirAll(authDeploymentDirectory, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	data := templates.WDTKDeployData{
-		Deployment: deployment.Name,
-		GatewayDir: gatewayDeploymentDirectory,
-		AuthDir:    authDeploymentDirectory,
-	}
-
-	return file.WriteTemplate(fmt.Sprintf("deploy/unix/WDTK_%s.sh", deployment.Name), templates.LocalDeployWDTKTemplate, data)
-}
-
-func createAuthConfig(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
-	for _, authEntry := range cfg.Authentication.Entry {
-		ac := authConfig{}
-
-		gatewayConfig, err := cfg.GetFilledGatewayDeployment(authEntry.Name)
-		if err != nil {
-			return err
-		}
-
-		ac.GatewayIp = *gatewayConfig.IP + ":" + *gatewayConfig.Port
-		ac.ConnectionString = authEntry.ConnectionString
-
-		// Write
-		file, err := json.MarshalIndent(ac, "", "    ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(fmt.Sprintf("deploy/generated/AuthConfig_%s.json", authEntry.Name), file, 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func createServiceConfig(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error {
-	for _, deployment := range cfg.Deployments {
-		gc := generalConfig{}
-
-		gatewayConfig, err := cfg.GetFilledGatewayDeployment(deployment.Name)
-		if err != nil {
-			return err
-		}
-
-		gc.GatewayIp = *gatewayConfig.IP + ":" + *gatewayConfig.Port
-
-		// Write
-		file, err := json.MarshalIndent(gc, "", "    ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(fmt.Sprintf("deploy/generated/ServiceConfig_%s.json", deployment.Name), file, 0644)
+		err = os.WriteFile(fmt.Sprintf("deploy/generated/Gateway_ServiceConfig_%s.json", deployment.Name), file, 0644)
 		if err != nil {
 			return err
 		}

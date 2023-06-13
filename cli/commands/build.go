@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -71,7 +70,7 @@ func runBuild(ctx *cli.Context) error {
 		if buildAll {
 			err := runBuildScript(&cfg, &service, logFile)
 			if err != nil {
-				log.Println(err)
+				fmt.Println(err)
 				numFailed++
 			} else {
 				numBuilt++
@@ -80,7 +79,7 @@ func runBuild(ctx *cli.Context) error {
 			if array.IsElementInArray(servicesToBuild, service.Name) {
 				err := runBuildScript(&cfg, &service, logFile)
 				if err != nil {
-					log.Println(err)
+					fmt.Println(err)
 					numFailed++
 				} else {
 					numBuilt++
@@ -104,7 +103,7 @@ func runBuildScript(cfg *types.WDTKConfig, service *types.ServiceDescriptionConf
 		return err
 	}
 
-	println("Building " + service.Name)
+	print("    - " + service.Name + " ")
 
 	// Run the deployment script
 	var outb, errb bytes.Buffer
@@ -115,16 +114,12 @@ func runBuildScript(cfg *types.WDTKConfig, service *types.ServiceDescriptionConf
 	cmd.Stderr = &errb
 	err = cmd.Run()
 
+	file.Append(logFile, outb.String())
+	file.Append(logFile, errb.String())
+
 	if err != nil {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
 		file.Append(logFile, err.Error())
-
-		return err
-	} else {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
-
-		return err
 	}
+
+	return err
 }

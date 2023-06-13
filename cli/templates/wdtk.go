@@ -22,22 +22,24 @@ deployments:
     ip: 127.0.0.1
     dir: {{.CurrentDir}}/dev/%serviceName
 
-# Gateway settings
-apiGateway:
-  # Describe gateway deployments
-  deployment:
-    - name: dev
-      port: 8080
-
-# Authentication service
-authentication:
-  deployment:
-    - name: dev
-      connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
-	  port: 8081
-
-# Services
+# Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:
+  # wdtk_service is a reserved keyword, which means that the service is going to be taken from wdtk-services repository
+  - name: Gateway
+    type: wdtk
+    deployment:
+      - name: dev
+        port: 8080
+
+  - name: Authentication
+    type: wdtk
+    deployment:
+      - name: dev
+        port: 8081
+        # Config key can be used for additional configuration options these will be stored inside the generated service config files
+        config:
+          connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
+
   # Describe services here
   - name: ExampleService
     type: service
