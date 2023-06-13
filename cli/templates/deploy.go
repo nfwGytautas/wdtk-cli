@@ -57,7 +57,7 @@ type DeployData struct {
 
 const LocalDeployTemplate = `
 echo Copying {{.InFile}}
-cp ../generated/ServiceConfig_{{.Deployment}}.json {{.OutDir}}ServiceConfig.json
+cp ../generated/ServiceConfig_{{.Deployment}}.json {{.OutDir}}/ServiceConfig.json
 cp {{.InFile}} {{.OutDir}}
 `
 
@@ -72,10 +72,10 @@ type WDTKDeployData struct {
 
 const LocalDeployWDTKTemplate = `
 echo Copying locator table
-cp ../generated/LocatorTable_{{.Deployment}}.json {{.GatewayDir}}LocatorTable.json
+cp ../generated/LocatorTable_{{.Deployment}}.json {{.GatewayDir}}/LocatorTable.json
 cp ../bin/unix/APIGateway {{.GatewayDir}}
 
 echo Copying authentication service
-cp ../generated/AuthConfig_{{.Deployment}}.json {{.AuthDir}}AuthConfig.json
+cp ../generated/AuthConfig_{{.Deployment}}.json {{.AuthDir}}/AuthConfig.json
 cp ../bin/unix/Auth {{.AuthDir}}
 `
