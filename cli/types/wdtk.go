@@ -16,6 +16,7 @@ type DeploymentConfig struct {
 	DeployDir *string                `yaml:"dir,omitempty"`
 	Port      *string                `yaml:"port,omitempty"`
 	Config    map[string]interface{} `yaml:"config,omitempty"`
+	ApiKey    *string                `yaml:"apiKey,omitempty"`
 }
 
 type ServiceDescriptionConfig struct {
@@ -107,6 +108,10 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 
 	if serviceDeployment.Port != nil {
 		result.Port = serviceDeployment.Port
+	}
+
+	if serviceDeployment.ApiKey != nil {
+		result.ApiKey = serviceDeployment.ApiKey
 	}
 
 	// TODO: Fill and override if defined

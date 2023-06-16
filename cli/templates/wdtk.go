@@ -21,6 +21,7 @@ deployments:
     # You can define defaults for a target here
     ip: 127.0.0.1
     dir: {{.CurrentDir}}/dev/%serviceName
+	apiKey: API_KEY_GOES_HERE
 
 # Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:

@@ -51,6 +51,7 @@ func GenerateDynamics(cfg types.WDTKConfig, stats *types.ServiceCheckStats) erro
 			configCopy := serviceDeployment.Config
 			configCopy["runAddress"] = *serviceDeployment.IP + ":" + *serviceDeployment.Port
 			configCopy["gatewayIp"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
+			configCopy["apiKey"] = gatewayDeployment.ApiKey
 
 			// Write
 			file, err := json.MarshalIndent(configCopy, "", "    ")
@@ -67,6 +68,7 @@ func GenerateDynamics(cfg types.WDTKConfig, stats *types.ServiceCheckStats) erro
 		gatewayConfigCopy := gatewayDeployment.Config
 		gatewayConfigCopy["runAddress"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
 		gatewayConfigCopy["locatorTable"] = locatorEntries
+		gatewayConfigCopy["apiKey"] = gatewayDeployment.ApiKey
 
 		// Write gateway config
 		file, err := json.MarshalIndent(gatewayConfigCopy, "", "    ")
