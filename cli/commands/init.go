@@ -2,7 +2,9 @@ package commands
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -40,16 +42,16 @@ func runInit(ctx *cli.Context) error {
 		err         error
 	)
 
-	projectName = ctx.String("name")
-	if ctx.String("name") == "" {
-		projectName, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-		projectName = filepath.Base(projectName)
+	err = checkEmpty()
+	if err != nil {
+		println("❌  Directory not empty")
+		return nil
 	}
 
+	projectName = ctx.String("name")
+
 	fmt.Printf("🛠️  Initializing new project '%s'\n", projectName)
+
 	err = writeConfigFile(projectName)
 	if err != nil {
 		return err
@@ -65,12 +67,40 @@ func runInit(ctx *cli.Context) error {
 	return nil
 }
 
+func checkEmpty() error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	files, err := ioutil.ReadDir(currentDir)
+	if err != nil {
+		return err
+	}
+
+	if len(files) != 0 {
+		return errors.New("directory not empty")
+	}
+
+	return nil
+}
+
 func writeConfigFile(projectName string) error {
 	println("✏️  Writing 'wdtk.yml'")
 
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	// Write wdtk.yml template
 	data := templates.WDTKTemplateData{}
+	data.CurrentDir = currentDir
 	data.ProjectName = projectName
+
+	if data.ProjectName == "" {
+		data.ProjectName = filepath.Base(currentDir)
+	}
 
 	file, err := os.OpenFile("wdtk.yml", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -105,32 +135,7 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = os.Mkdir("services/ExampleService", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("services/ExampleService/service/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("services/ExampleService/balancer/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
 	err = os.Mkdir("frontend", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("tools", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile("tools/UnixUpdateGoMods.sh", []byte(templates.UnixUpdateGoMods), os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -155,22 +160,7 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = os.Mkdir("deploy/bin/unix/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir("deploy/unix/", os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = templates.WriteServiceTemplate("services/ExampleService/service/main.go")
-	if err != nil {
-		return err
-	}
-
-	err = templates.WriteServiceTemplate("services/ExampleService/balancer/main.go")
+	err = os.Mkdir("deploy/remotes/", os.ModePerm)
 	if err != nil {
 		return err
 	}

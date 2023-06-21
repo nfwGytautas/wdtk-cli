@@ -7,47 +7,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// PUBLIC TYPES
-// ========================================================================
-
-type AuthenticationEntry struct {
-	DeploymentConfig `yaml:",inline"`
-	ConnectionString string `yaml:"connectionString"`
-}
+const (
+	SERVICE_TYPE_GIT    = "git"
+	SERVICE_TYPE_BINARY = "bin"
+	SERVICE_TYPE_LOCAL  = "src"
+)
 
 type DeploymentConfig struct {
-	Name      string  `yaml:"name"`
-	IP        *string `yaml:"ip,omitempty"`
-	DeployDir *string `yaml:"dir,omitempty"`
-	Port      *string `yaml:"port,omitempty"`
-}
-
-type ServiceDescriptionConfig struct {
-	Name       string             `yaml:"name"`
-	Type       string             `yaml:"type"`
-	Language   string             `yaml:"language"`
-	Deployment []DeploymentConfig `yaml:"deployment"`
+	Name      string                 `yaml:"name"`
+	IP        *string                `yaml:"ip,omitempty"`
+	DeployDir *string                `yaml:"dir,omitempty"`
+	Port      *string                `yaml:"port,omitempty"`
+	Config    map[string]interface{} `yaml:"config,omitempty"`
+	ApiKey    *string                `yaml:"apiKey,omitempty"`
 }
 
 // WDTK go representation of wdtk.yml file, generated with https://zhwt.github.io/yaml-to-go/
 type WDTKConfig struct {
-	Package     string             `yaml:"package"`
-	Name        string             `yaml:"name"`
-	Deployments []DeploymentConfig `yaml:"deployments"`
-	APIGateway  struct {
-		Deployment []DeploymentConfig `yaml:"deployment"`
-	} `yaml:"apiGateway"`
-	Authentication struct {
-		Entry []AuthenticationEntry `yaml:"deployment"`
-	} `yaml:"authentication"`
-	Services []ServiceDescriptionConfig `yaml:"services"`
+	Package     string                     `yaml:"package"`
+	Name        string                     `yaml:"name"`
+	Deployments []DeploymentConfig         `yaml:"deployments"`
+	Services    []ServiceDescriptionConfig `yaml:"services"`
 }
-
-// PRIVATE TYPES
-// ========================================================================
-
-// PUBLIC FUNCTIONS
-// ========================================================================
 
 // Reads wdtk.yml file
 func (wdtk *WDTKConfig) Read() error {
@@ -59,6 +40,30 @@ func (wdtk *WDTKConfig) Read() error {
 	}
 
 	return yaml.Unmarshal(in, wdtk)
+}
+
+// Returns all services whose type matches the one specified
+func (wdtk *WDTKConfig) GetServicesOfType(t string) []ServiceDescriptionConfig {
+	var result []ServiceDescriptionConfig
+	for _, service := range wdtk.Services {
+		if service.Source.Type == t {
+			result = append(result, service)
+		}
+	}
+
+	return result
+}
+
+// Returns the service that has gateway options set to true
+func (wdtk *WDTKConfig) GetGatewayService() (ServiceDescriptionConfig, error) {
+	for _, service := range wdtk.Services {
+		if service.Options != nil && service.Options.IsGateway != nil && *service.Options.IsGateway {
+			return service, nil
+		}
+	}
+
+	// TODO: Verify that one exists
+	return ServiceDescriptionConfig{}, errors.New("no gateway service provided")
 }
 
 // Get a filled deployment for a specific service
@@ -96,46 +101,16 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 		result.Port = serviceDeployment.Port
 	}
 
-	return result, nil
-}
-
-// Get filled deployment data for api gateway
-func (wdtk *WDTKConfig) GetFilledGatewayDeployment(deployment string) (DeploymentConfig, error) {
-	var result DeploymentConfig
-	var gatewayDeployment DeploymentConfig
-
-	// Find the defined deployment
-	for _, itDeployment := range wdtk.Deployments {
-		if itDeployment.Name == deployment {
-			result = itDeployment
-		}
+	if serviceDeployment.ApiKey != nil {
+		result.ApiKey = serviceDeployment.ApiKey
 	}
 
-	for _, itDeployment := range wdtk.APIGateway.Deployment {
-		if itDeployment.Name == deployment {
-			gatewayDeployment = itDeployment
-		}
-	}
-
-	if result.Name == "" {
-		return result, errors.New("deployment doesn't exist")
-	}
-
-	// Now override values
-	if gatewayDeployment.IP != nil {
-		result.IP = gatewayDeployment.IP
-	}
-
-	if gatewayDeployment.DeployDir != nil {
-		result.DeployDir = gatewayDeployment.DeployDir
-	}
-
-	if gatewayDeployment.Port != nil {
-		result.Port = gatewayDeployment.Port
+	// TODO: Fill and override if defined
+	if serviceDeployment.Config != nil {
+		result.Config = serviceDeployment.Config
+	} else {
+		result.Config = make(map[string]interface{})
 	}
 
 	return result, nil
 }
-
-// PRIVATE FUNCTIONS
-// ========================================================================

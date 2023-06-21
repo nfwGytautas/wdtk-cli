@@ -5,6 +5,7 @@ package templates
 
 // Data for balancer template
 type WDTKTemplateData struct {
+	CurrentDir  string
 	ProjectName string
 }
 
@@ -19,29 +20,40 @@ deployments:
   - name: dev
     # You can define defaults for a target here
     ip: 127.0.0.1
-    dir: ~/{{.ProjectName}}/dev/%serviceName
+    dir: {{.CurrentDir}}/dev/%serviceName
+    apiKey: API_KEY_GOES_HERE
 
-# Gateway settings
-apiGateway:
-  # Describe gateway deployments
-  deployment:
-    - name: dev
-      port: 8080
-
-# Authentication service
-authentication:
-  deployment:
-    - name: dev
-      connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
-
-# Services
+# Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:
+  # wdtk_service is a reserved keyword, which means that the service is going to be taken from wdtk-services repository
+  - name: Gateway
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/gateway
+      language: go
+    deployment:
+      - name: dev
+        port: 8080
+    options:
+      gateway: true
+
+  - name: Authentication
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/authentication
+      language: go
+    deployment:
+      - name: dev
+        port: 8081
+        # Config key can be used for additional configuration options these will be stored inside the generated service config files
+        config:
+          connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
+
+  # Describe services here
   - name: ExampleService
     source:
-      service:
-        language: go
-      balancer: # <- Can also specify null to indicate that the service has no balancer
-        language: go
+      type: src
+      language: go
     deployment:
       - name: dev
         port: 8090
