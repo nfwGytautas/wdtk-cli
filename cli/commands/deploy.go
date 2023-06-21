@@ -1,18 +1,17 @@
 package commands
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nfwGytautas/gdev/array"
-	"github.com/nfwGytautas/gdev/file"
+	"github.com/nfwGytautas/webdev-tk/cli/deploy"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
+	"github.com/nfwGytautas/webdev-tk/cli/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -73,28 +72,20 @@ func runDeploy(ctx *cli.Context) error {
 	deployAll := ctx.Args().Get(1) == "all"
 
 	for _, service := range cfg.Services {
+		deploy := deployAll || array.IsElementInArray(servicesToDeploy, service.Name)
+
 		filledDeployment, err := cfg.GetFilledDeployment(service, ctx.Args().Get(0))
 		if err != nil {
 			return err
 		}
 
-		if deployAll {
-			err := runDeployScript(&cfg, &service, &filledDeployment, logFile)
+		if deploy {
+			err := deployService(cfg, service, filledDeployment, logFile)
 			if err != nil {
 				log.Println(err)
 				numFailed++
 			} else {
 				numDeployed++
-			}
-		} else {
-			if array.IsElementInArray(servicesToDeploy, service.Name) {
-				err := runDeployScript(&cfg, &service, &filledDeployment, logFile)
-				if err != nil {
-					log.Println(err)
-					numFailed++
-				} else {
-					numDeployed++
-				}
 			}
 		}
 	}
@@ -124,33 +115,21 @@ func getDeployment(cfg *types.WDTKConfig, target string) *types.DeploymentConfig
 	return nil
 }
 
-func runDeployScript(cfg *types.WDTKConfig, service *types.ServiceDescriptionConfig, deployment *types.DeploymentConfig, logFile string) error {
-	abs, err := filepath.Abs("deploy/unix/")
-	if err != nil {
-		return err
+func deployService(cfg types.WDTKConfig, service types.ServiceDescriptionConfig, deployment types.DeploymentConfig, logFile string) error {
+	println(util.SPACING_1 + "- " + service.Name)
+
+	rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", service.Name, -1)
+
+	data := deploy.DeployData{
+		OutputDir:      rootDeploymentDirectory,
+		ServiceName:    service.Name,
+		DeploymentName: deployment.Name,
 	}
 
-	println("Deploying " + service.Name)
-
-	// Run the deployment script
-	var outb, errb bytes.Buffer
-
-	cmd := exec.Command("bash", fmt.Sprintf("./%s_DEPLOY_%s.sh", service.Name, deployment.Name))
-	cmd.Dir = abs
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-	err = cmd.Run()
-
-	if err != nil {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
-		file.Append(logFile, err.Error())
-
-		return err
-	} else {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
-
-		return err
+	// Check if this is a local deployment or remote
+	if *deployment.IP == "127.0.0.1" || *deployment.IP == "localhost" {
+		return deploy.DeployLocal(data)
 	}
+
+	return deploy.DeployRemote(data)
 }

@@ -21,19 +21,27 @@ deployments:
     # You can define defaults for a target here
     ip: 127.0.0.1
     dir: {{.CurrentDir}}/dev/%serviceName
-	apiKey: API_KEY_GOES_HERE
+    apiKey: API_KEY_GOES_HERE
 
 # Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:
   # wdtk_service is a reserved keyword, which means that the service is going to be taken from wdtk-services repository
   - name: Gateway
-    type: wdtk
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/gateway
+      language: go
     deployment:
       - name: dev
         port: 8080
+    options:
+      gateway: true
 
   - name: Authentication
-    type: wdtk
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/authentication
+      language: go
     deployment:
       - name: dev
         port: 8081
@@ -43,8 +51,9 @@ services:
 
   # Describe services here
   - name: ExampleService
-    type: service
-    language: go
+    source:
+      type: src
+      language: go
     deployment:
       - name: dev
         port: 8090

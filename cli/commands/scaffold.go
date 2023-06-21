@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/nfwGytautas/webdev-tk/cli/checks"
+	"github.com/nfwGytautas/webdev-tk/cli/scaffold"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 	"github.com/urfave/cli/v2"
 )
@@ -38,9 +38,15 @@ func runScaffold(ctx *cli.Context) error {
 
 	println("🧐  Checking...")
 
-	stats, err := serviceCheck(cfg)
-	if err != nil {
-		return err
+	stats := types.ServiceCheckStats{}
+
+	actions := getScaffoldActions()
+	for _, action := range actions {
+		err := action(cfg, &stats)
+		if err != nil {
+			fmt.Println("❗️  " + err.Error())
+			break
+		}
 	}
 
 	print("--- ")
@@ -56,39 +62,16 @@ func runScaffold(ctx *cli.Context) error {
 
 	println("--- ")
 
-	println("✅  Scaffolded the project, you can deploy it using 'wdtk deploy [TARGET] [all|services...] '")
+	println("✅  Scaffolding done")
 
 	return nil
 }
 
-func serviceCheck(cfg types.WDTKConfig) (types.ServiceCheckStats, error) {
-	stats := types.ServiceCheckStats{}
-	var err error
-
-	err = checks.AllServicesCreated(cfg, &stats)
-	if err != nil {
-		return stats, err
+func getScaffoldActions() []types.ScaffoldAction {
+	return []types.ScaffoldAction{
+		scaffold.CreateLocalServices,
+		scaffold.PullGitServices,
+		scaffold.GenerateConfigs,
+		scaffold.WriteGoWork,
 	}
-
-	err = checks.GoWorkIsUpToDate(cfg, &stats)
-	if err != nil {
-		return stats, err
-	}
-
-	err = checks.DeployScriptsExist(cfg, &stats)
-	if err != nil {
-		return stats, err
-	}
-
-	err = checks.GenerateDynamics(cfg, &stats)
-	if err != nil {
-		return stats, err
-	}
-
-	err = checks.PullWDTKServices(cfg, &stats)
-	if err != nil {
-		return stats, err
-	}
-
-	return stats, nil
 }

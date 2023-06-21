@@ -7,8 +7,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// PUBLIC TYPES
-// ========================================================================
+const (
+	SERVICE_TYPE_GIT    = "git"
+	SERVICE_TYPE_BINARY = "bin"
+	SERVICE_TYPE_LOCAL  = "src"
+)
 
 type DeploymentConfig struct {
 	Name      string                 `yaml:"name"`
@@ -19,13 +22,6 @@ type DeploymentConfig struct {
 	ApiKey    *string                `yaml:"apiKey,omitempty"`
 }
 
-type ServiceDescriptionConfig struct {
-	Name       string             `yaml:"name"`
-	Type       string             `yaml:"type"`
-	Language   string             `yaml:"language"`
-	Deployment []DeploymentConfig `yaml:"deployment"`
-}
-
 // WDTK go representation of wdtk.yml file, generated with https://zhwt.github.io/yaml-to-go/
 type WDTKConfig struct {
 	Package     string                     `yaml:"package"`
@@ -33,15 +29,6 @@ type WDTKConfig struct {
 	Deployments []DeploymentConfig         `yaml:"deployments"`
 	Services    []ServiceDescriptionConfig `yaml:"services"`
 }
-
-// PRIVATE TYPES
-// ========================================================================
-
-const WDTK_SERVICE_IDENTIFIER = "wdtk"
-const WDTK_GATEWAY_SERVICE_NAME = "Gateway"
-
-// PUBLIC FUNCTIONS
-// ========================================================================
 
 // Reads wdtk.yml file
 func (wdtk *WDTKConfig) Read() error {
@@ -55,24 +42,28 @@ func (wdtk *WDTKConfig) Read() error {
 	return yaml.Unmarshal(in, wdtk)
 }
 
+// Returns all services whose type matches the one specified
+func (wdtk *WDTKConfig) GetServicesOfType(t string) []ServiceDescriptionConfig {
+	var result []ServiceDescriptionConfig
+	for _, service := range wdtk.Services {
+		if service.Source.Type == t {
+			result = append(result, service)
+		}
+	}
+
+	return result
+}
+
+// Returns the service that has gateway options set to true
 func (wdtk *WDTKConfig) GetGatewayService() (ServiceDescriptionConfig, error) {
 	for _, service := range wdtk.Services {
-		if service.Name == WDTK_GATEWAY_SERVICE_NAME {
+		if service.Options != nil && service.Options.IsGateway != nil && *service.Options.IsGateway {
 			return service, nil
 		}
 	}
 
-	return ServiceDescriptionConfig{}, errors.New("failed to get gateway service")
-}
-
-func (wdtk *WDTKConfig) GetUserServices() []ServiceDescriptionConfig {
-	var result []ServiceDescriptionConfig
-	for _, service := range wdtk.Services {
-		if service.Type != WDTK_SERVICE_IDENTIFIER {
-			result = append(result, service)
-		}
-	}
-	return result
+	// TODO: Verify that one exists
+	return ServiceDescriptionConfig{}, errors.New("no gateway service provided")
 }
 
 // Get a filled deployment for a specific service
@@ -123,6 +114,3 @@ func (wdtk *WDTKConfig) GetFilledDeployment(service ServiceDescriptionConfig, de
 
 	return result, nil
 }
-
-// PRIVATE FUNCTIONS
-// ========================================================================
