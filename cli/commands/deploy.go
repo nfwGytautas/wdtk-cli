@@ -82,8 +82,8 @@ func runDeploy(ctx *cli.Context) error {
 		}
 
 		if shouldDeploy {
-			name := cases.Title(language.English, cases.Compact).String(service.Name)
-			println(util.SPACING_1 + "- " + name)
+			name := service.Name
+			println(util.SPACING_1 + "- [ Service] " + name)
 
 			rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", name, -1)
 			serviceConfigPath := fmt.Sprintf(".wdtk/generated/%s_ServiceConfig_%s.json", service.Name, deployment.Name)
@@ -119,7 +119,7 @@ func runDeploy(ctx *cli.Context) error {
 
 			if shouldDeploy {
 				name := cases.Title(language.English, cases.Compact).String(frontend.Type)
-				println(util.SPACING_1 + "- " + name)
+				println(util.SPACING_1 + "- [Frontend] " + name)
 
 				rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", name, -1)
 				serviceConfigPath := fmt.Sprintf(".wdtk/generated/%s_FrontendConfig_%s.json", frontend.Type, deployment.Name)
