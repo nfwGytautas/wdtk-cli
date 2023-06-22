@@ -1,7 +1,6 @@
 package deploy
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/nfwGytautas/gdev/file"
@@ -20,16 +19,24 @@ func DeployLocal(data DeployData) error {
 	}
 
 	// Copy service config
-	serviceConfigPath := fmt.Sprintf("deploy/generated/%s_ServiceConfig_%s.json", data.ServiceName, data.DeploymentName)
-	err := file.CopyFile(serviceConfigPath, data.OutputDir+"/ServiceConfig.json")
+	err := file.CopyFile(data.ConfigFile, data.OutputDir+"/"+data.ConfigFileName)
 	if err != nil {
 		return err
 	}
 
 	// Copy executable
-	err = file.CopyFile("deploy/bin/"+data.ServiceName, data.OutputDir+"/"+data.ServiceName)
-	if err != nil {
-		return err
+	if data.ServiceName[len(data.ServiceName)-1:] == "/" {
+		// Directory
+		err = file.CopyDirectory(data.InputDir+data.ServiceName, data.OutputDir+"/")
+		if err != nil {
+			return err
+		}
+	} else {
+		// File
+		err = file.CopyFile(data.InputDir+data.ServiceName, data.OutputDir+"/"+data.ServiceName)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

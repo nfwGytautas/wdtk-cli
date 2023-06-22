@@ -73,5 +73,6 @@ func getScaffoldActions() []types.ScaffoldAction {
 		scaffold.PullGitServices,
 		scaffold.GenerateConfigs,
 		scaffold.WriteGoWork,
+		scaffold.CreateFlutterProject,
 	}
 }

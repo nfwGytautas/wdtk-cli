@@ -29,6 +29,6 @@ func (service *ServiceDescriptionConfig) GitLocalDestination() (string, error) {
 	}
 
 	parts := strings.Split(*service.Source.Remote, "/")
-	path := fmt.Sprintf("deploy/remotes/%s/%s", parts[2], parts[3])
+	path := fmt.Sprintf(".wdtk/remotes/%s/%s", parts[2], parts[3])
 	return path, nil
 }

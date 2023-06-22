@@ -20,8 +20,18 @@ deployments:
   - name: dev
     # You can define defaults for a target here
     ip: 127.0.0.1
+    port: 8080
     dir: {{.CurrentDir}}/dev/%serviceName
     apiKey: API_KEY_GOES_HERE
+
+# Describe the frontend
+frontend:
+  platforms:
+    # Write all the used frontend platforms
+    - type: web
+      toolchain: flutter
+      deployment:
+        - name: dev
 
 # Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:
@@ -77,7 +87,7 @@ A project utilizing WebDev Toolkit https://github.com/nfwGytautas/webdev-tk
 // Template for .gitignore in root directory
 const GitIgnore = `
 # deploy related directories
-deploy/
+.wdtk/
 `
 
 // Template for update go mods template

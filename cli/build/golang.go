@@ -2,7 +2,7 @@ package build
 
 import "github.com/nfwGytautas/webdev-tk/cli/util"
 
-func buildGo(data BuildData) error {
+func buildGo(data ServiceBuildData) error {
 	var err error
 
 	err = modTidy(data)
@@ -23,7 +23,7 @@ func buildGo(data BuildData) error {
 	return nil
 }
 
-func modTidy(data BuildData) error {
+func modTidy(data ServiceBuildData) error {
 	println(util.SPACING_2 + "Running 'go mod tidy'")
 	return util.ExecuteCommand(util.Command{
 		Command:        "go",
@@ -33,7 +33,7 @@ func modTidy(data BuildData) error {
 	})
 }
 
-func goGet(data BuildData) error {
+func goGet(data ServiceBuildData) error {
 	println(util.SPACING_2 + "Running 'go get ./'")
 	return util.ExecuteCommand(util.Command{
 		Command:        "go",
@@ -43,7 +43,7 @@ func goGet(data BuildData) error {
 	})
 }
 
-func goBuild(data BuildData) error {
+func goBuild(data ServiceBuildData) error {
 	println(util.SPACING_2 + "Running 'go build -o " + data.OutDir + data.ServiceName + " .'")
 	return util.ExecuteCommand(util.Command{
 		Command:        "go",

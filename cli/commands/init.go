@@ -140,27 +140,37 @@ func createDirectoryStructure() error {
 		return err
 	}
 
-	err = os.Mkdir("deploy", os.ModePerm)
+	err = os.Mkdir(".wdtk/", os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("deploy/logs/", os.ModePerm)
+	err = os.Mkdir(".wdtk/logs/", os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("deploy/generated/", os.ModePerm)
+	err = os.Mkdir(".wdtk/generated/", os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("deploy/bin/", os.ModePerm)
+	err = os.Mkdir(".wdtk/bin/", os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("deploy/remotes/", os.ModePerm)
+	err = os.Mkdir(".wdtk/bin/services/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(".wdtk/bin/frontends/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(".wdtk/remotes/", os.ModePerm)
 	if err != nil {
 		return err
 	}
