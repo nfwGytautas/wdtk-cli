@@ -59,6 +59,19 @@ services:
         config:
           connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
 
+  # Simple http-server for the web frontend
+  - name: Http-Server
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/http-server
+      language: go
+    deployment:
+      - name: dev
+        port: 8080
+        config:
+          # %deploymentDir is a unique placeholder for selecting the directory of a deployment up until %serviceName
+          htmlDirectory: "%deploymentDirWeb/"
+
   # Describe services here
   - name: ExampleService
     source:

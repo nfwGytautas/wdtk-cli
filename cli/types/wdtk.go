@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -12,15 +13,6 @@ const (
 	SERVICE_TYPE_BINARY = "bin"
 	SERVICE_TYPE_LOCAL  = "src"
 )
-
-type DeploymentConfig struct {
-	Name      string                 `yaml:"name"`
-	IP        *string                `yaml:"ip,omitempty"`
-	DeployDir *string                `yaml:"dir,omitempty"`
-	Port      *string                `yaml:"port,omitempty"`
-	Config    map[string]interface{} `yaml:"config,omitempty"`
-	ApiKey    *string                `yaml:"apiKey,omitempty"`
-}
 
 // WDTK go representation of wdtk.yml file, generated with https://zhwt.github.io/yaml-to-go/
 type WDTKConfig struct {
@@ -87,7 +79,7 @@ func (wdtk *WDTKConfig) GetFilledServiceDeployment(service ServiceDescriptionCon
 		return result, errors.New("deployment doesn't exist")
 	}
 
-	wdtk.fillDeployment(serviceDeployment, &result)
+	wdtk.fillDeployment(serviceDeployment, &result, service.Name)
 	return result, nil
 }
 
@@ -111,7 +103,7 @@ func (wdtk *WDTKConfig) GetFilledFrontendDeployment(frontend PlatformEntry, depl
 		return result, errors.New("deployment doesn't exist")
 	}
 
-	wdtk.fillDeployment(frontendDeployment, &result)
+	wdtk.fillDeployment(frontendDeployment, &result, frontend.Type)
 	return result, nil
 }
 
@@ -119,29 +111,29 @@ func (wdtk *WDTKConfig) getDeploymentByName(deployment string) (DeploymentConfig
 	// Find the defined deployment
 	for _, itDeployment := range wdtk.Deployments {
 		if itDeployment.Name == deployment {
-			return itDeployment, nil
+			return itDeployment.clone(), nil
 		}
 	}
 
 	return DeploymentConfig{}, errors.New("failed to get deployment " + deployment)
 }
 
-func (wdtk *WDTKConfig) fillDeployment(source DeploymentConfig, target *DeploymentConfig) {
+func (wdtk *WDTKConfig) fillDeployment(source DeploymentConfig, target *DeploymentConfig, serviceName string) {
 	// Now override values
 	if source.IP != nil {
-		target.IP = source.IP
+		*target.IP = *source.IP
 	}
 
 	if source.DeployDir != nil {
-		target.DeployDir = source.DeployDir
+		*target.DeployDir = *source.DeployDir
 	}
 
 	if source.Port != nil {
-		target.Port = source.Port
+		*target.Port = *source.Port
 	}
 
 	if source.ApiKey != nil {
-		target.ApiKey = source.ApiKey
+		*target.ApiKey = *source.ApiKey
 	}
 
 	// TODO: Fill and override if defined
@@ -150,4 +142,19 @@ func (wdtk *WDTKConfig) fillDeployment(source DeploymentConfig, target *Deployme
 	} else {
 		target.Config = make(map[string]interface{})
 	}
+
+	// Fill placeholders
+	deployDirRoot := strings.Replace(*target.DeployDir, "%serviceName", "", -1)
+	for key, entry := range target.Config {
+		value, ok := entry.(string)
+
+		if ok {
+			// String
+			if strings.Contains(value, "%deploymentDir") {
+				target.Config[key] = strings.Replace(value, "%deploymentDir", deployDirRoot, -1)
+			}
+		}
+	}
+
+	*target.DeployDir = strings.Replace(*target.DeployDir, "%serviceName", serviceName, -1)
 }

@@ -126,7 +126,6 @@ func generateFrontendConfig(frontendDeployment, gatewayDeployment types.Deployme
 	configCopy := frontendDeployment.Config
 	configCopy["runAddress"] = *frontendDeployment.IP + ":" + *frontendDeployment.Port
 	configCopy["gatewayIp"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
-	configCopy["apiKey"] = gatewayDeployment.ApiKey
 
 	// Write
 	file, err := json.MarshalIndent(configCopy, "", "    ")
