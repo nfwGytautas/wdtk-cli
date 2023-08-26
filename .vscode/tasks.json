@@ -2,15 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "[Minikube] Tunnel",
-            "type": "shell",
-            "command": "minikube",
-            "args": [
-                "tunnel",
-            ]
-        },
-        {
-            "label": "[MSTK] Build",
+            "label": "[WDTK] Build",
             "type": "shell",
             "command": "go",
             "args": [
@@ -22,26 +14,6 @@
             "options": {
                 "cwd": "${workspaceFolder}/cli/"
             }
-        },
-        {
-            "label": "[MSTK] Setup",
-            "type": "shell",
-            "command": "go",
-            "args": [
-                "run",
-                "./cli",
-                "setup",
-            ]
-        },
-        {
-            "label": "[MSTK] Clean",
-            "type": "shell",
-            "command": "go",
-            "args": [
-                "run",
-                "./cli",
-                "clean",
-            ]
         }
     ]
 }

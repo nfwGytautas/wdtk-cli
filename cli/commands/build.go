@@ -1,18 +1,16 @@
 package commands
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
 	"github.com/nfwGytautas/gdev/array"
-	"github.com/nfwGytautas/gdev/file"
+	"github.com/nfwGytautas/webdev-tk/cli/build"
 	"github.com/nfwGytautas/webdev-tk/cli/types"
+	"github.com/nfwGytautas/webdev-tk/cli/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -67,24 +65,32 @@ func runBuild(ctx *cli.Context) error {
 
 	buildAll := ctx.Args().Get(0) == "all"
 
-	for _, service := range cfg.Services {
-		if buildAll {
-			err := runBuildScript(&cfg, &service, logFile)
+	// Local
+	for _, service := range cfg.GetServicesOfType(types.SERVICE_TYPE_LOCAL) {
+		build := buildAll || array.IsElementInArray(servicesToBuild, service.Name)
+
+		if build {
+			err := buildLocalService(&cfg, &service, logFile)
 			if err != nil {
-				log.Println(err)
+				fmt.Println(err)
 				numFailed++
 			} else {
 				numBuilt++
 			}
-		} else {
-			if array.IsElementInArray(servicesToBuild, service.Name) {
-				err := runBuildScript(&cfg, &service, logFile)
-				if err != nil {
-					log.Println(err)
-					numFailed++
-				} else {
-					numBuilt++
-				}
+		}
+	}
+
+	// Git
+	for _, service := range cfg.GetServicesOfType(types.SERVICE_TYPE_GIT) {
+		build := buildAll || array.IsElementInArray(servicesToBuild, service.Name)
+
+		if build {
+			err := buildGitService(&cfg, &service, logFile)
+			if err != nil {
+				fmt.Println(err)
+				numFailed++
+			} else {
+				numBuilt++
 			}
 		}
 	}
@@ -98,33 +104,37 @@ func runBuild(ctx *cli.Context) error {
 	return nil
 }
 
-func runBuildScript(cfg *types.WDTKConfig, service *types.ServiceDescriptionConfig, logFile string) error {
-	abs, err := filepath.Abs("deploy/unix/")
+func buildLocalService(cfg *types.WDTKConfig, service *types.ServiceDescriptionConfig, logFile string) error {
+	println(util.SPACING_1 + "- " + service.Name)
+	abs, err := filepath.Abs("deploy/bin/")
 	if err != nil {
 		return err
 	}
 
-	println("Building " + service.Name)
+	data := build.BuildData{
+		SourceDir:   "services/" + service.Name,
+		OutDir:      abs + "/",
+		ServiceName: service.Name,
+	}
+	return build.Build(data, *service.Source.Language)
+}
 
-	// Run the deployment script
-	var outb, errb bytes.Buffer
-
-	cmd := exec.Command("bash", fmt.Sprintf("./%s_BUILD_UNIX.sh", service.Name))
-	cmd.Dir = abs
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-	err = cmd.Run()
-
+func buildGitService(cfg *types.WDTKConfig, service *types.ServiceDescriptionConfig, logFile string) error {
+	println(util.SPACING_1 + "- " + service.Name)
+	abs, err := filepath.Abs("deploy/bin/")
 	if err != nil {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
-		file.Append(logFile, err.Error())
-
-		return err
-	} else {
-		file.Append(logFile, outb.String())
-		file.Append(logFile, errb.String())
-
 		return err
 	}
+
+	source, err := service.GitLocalDestination()
+	if err != nil {
+		return err
+	}
+
+	data := build.BuildData{
+		SourceDir:   source,
+		OutDir:      abs + "/",
+		ServiceName: service.Name,
+	}
+	return build.Build(data, *service.Source.Language)
 }

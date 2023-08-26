@@ -10,3 +10,6 @@ type ServiceCheckStats struct {
 	NumCreatedDeployScripts int
 	UnusedServices          []string
 }
+
+// Scaffold command action
+type ScaffoldAction func(cfg WDTKConfig, stats *ServiceCheckStats) error
