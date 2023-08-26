@@ -20,8 +20,18 @@ deployments:
   - name: dev
     # You can define defaults for a target here
     ip: 127.0.0.1
+    port: 8080
     dir: {{.CurrentDir}}/dev/%serviceName
     apiKey: API_KEY_GOES_HERE
+
+# Describe the frontend
+frontend:
+  platforms:
+    # Write all the used frontend platforms
+    - type: web
+      toolchain: flutter
+      deployment:
+        - name: dev
 
 # Services array must define a service with the name 'Authentication' and name 'Gateway'
 services:
@@ -48,6 +58,19 @@ services:
         # Config key can be used for additional configuration options these will be stored inside the generated service config files
         config:
           connectionString: "user:password@tcp(127.0.0.1:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
+
+  # Simple http-server for the web frontend
+  - name: Http-Server
+    source:
+      type: git
+      remote: github.com/nfwGytautas/wdtk-services/http-server
+      language: go
+    deployment:
+      - name: dev
+        port: 8080
+        config:
+          # %deploymentDir is a unique placeholder for selecting the directory of a deployment up until %serviceName
+          htmlDirectory: "%deploymentDirWeb/"
 
   # Describe services here
   - name: ExampleService
@@ -77,7 +100,7 @@ A project utilizing WebDev Toolkit https://github.com/nfwGytautas/webdev-tk
 // Template for .gitignore in root directory
 const GitIgnore = `
 # deploy related directories
-deploy/
+.wdtk/
 `
 
 // Template for update go mods template

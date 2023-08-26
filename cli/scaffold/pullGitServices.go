@@ -46,14 +46,14 @@ func cloneOrPull(remote string) error {
 
 	fmt.Print(util.SPACING_1 + "- ")
 
-	if !file.Exists("deploy/remotes/" + repoName) {
+	if !file.Exists(".wdtk/remotes/" + repoName) {
 		// Doesn't exist clone
 		fmt.Printf("Cloning https://%s\n", remote)
 
 		err := util.ExecuteCommand(util.Command{
 			Command:   "git",
 			Args:      []string{"clone", "https://" + remote},
-			Directory: "deploy/remotes/",
+			Directory: ".wdtk/remotes/",
 		})
 
 		if err != nil {
@@ -66,7 +66,7 @@ func cloneOrPull(remote string) error {
 		err := util.ExecuteCommand(util.Command{
 			Command:   "git",
 			Args:      []string{"pull"},
-			Directory: "deploy/remotes/" + repoName,
+			Directory: ".wdtk/remotes/" + repoName,
 		})
 
 		if err != nil {

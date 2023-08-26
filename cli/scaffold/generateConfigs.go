@@ -36,7 +36,7 @@ func GenerateConfigs(cfg types.WDTKConfig, stats *types.ServiceCheckStats) error
 }
 
 func generateDeployment(cfg types.WDTKConfig, deployment types.DeploymentConfig, gateway types.ServiceDescriptionConfig) error {
-	gatewayDeployment, err := cfg.GetFilledDeployment(gateway, deployment.Name)
+	gatewayDeployment, err := cfg.GetFilledServiceDeployment(gateway, deployment.Name)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func generateDeployment(cfg types.WDTKConfig, deployment types.DeploymentConfig,
 
 		println(util.SPACING_2 + "- " + service.Name)
 
-		serviceDeployment, err := cfg.GetFilledDeployment(service, deployment.Name)
+		serviceDeployment, err := cfg.GetFilledServiceDeployment(service, deployment.Name)
 		if err != nil {
 			return err
 		}
@@ -62,6 +62,22 @@ func generateDeployment(cfg types.WDTKConfig, deployment types.DeploymentConfig,
 		err = generateServiceConfig(serviceDeployment, gatewayDeployment, service)
 		if err != nil {
 			return err
+		}
+	}
+
+	if cfg.Frontend != nil {
+		for _, frontend := range cfg.Frontend.Platforms {
+			println(util.SPACING_2 + "- " + frontend.Type)
+
+			frontendDeployment, err := cfg.GetFilledFrontendDeployment(frontend, deployment.Name)
+			if err != nil {
+				return err
+			}
+
+			err = generateFrontendConfig(frontendDeployment, gatewayDeployment, frontend)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -78,7 +94,7 @@ func generateDeployment(cfg types.WDTKConfig, deployment types.DeploymentConfig,
 		return err
 	}
 
-	err = os.WriteFile(fmt.Sprintf("deploy/generated/Gateway_ServiceConfig_%s.json", deployment.Name), file, 0644)
+	err = os.WriteFile(fmt.Sprintf(".wdtk/generated/Gateway_ServiceConfig_%s.json", deployment.Name), file, 0644)
 	if err != nil {
 		return err
 	}
@@ -98,7 +114,26 @@ func generateServiceConfig(serviceDeployment, gatewayDeployment types.Deployment
 		return err
 	}
 
-	err = os.WriteFile(fmt.Sprintf("deploy/generated/%s_ServiceConfig_%s.json", service.Name, serviceDeployment.Name), file, 0644)
+	err = os.WriteFile(fmt.Sprintf(".wdtk/generated/%s_ServiceConfig_%s.json", service.Name, serviceDeployment.Name), file, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateFrontendConfig(frontendDeployment, gatewayDeployment types.DeploymentConfig, frontend types.PlatformEntry) error {
+	configCopy := frontendDeployment.Config
+	configCopy["runAddress"] = *frontendDeployment.IP + ":" + *frontendDeployment.Port
+	configCopy["gatewayIp"] = *gatewayDeployment.IP + ":" + *gatewayDeployment.Port
+
+	// Write
+	file, err := json.MarshalIndent(configCopy, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(fmt.Sprintf(".wdtk/generated/%s_FrontendConfig_%s.json", frontend.Type, frontendDeployment.Name), file, 0644)
 	if err != nil {
 		return err
 	}

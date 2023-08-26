@@ -13,6 +13,8 @@ import (
 	"github.com/nfwGytautas/webdev-tk/cli/types"
 	"github.com/nfwGytautas/webdev-tk/cli/util"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // PUBLIC TYPES
@@ -58,7 +60,7 @@ func runDeploy(ctx *cli.Context) error {
 	}
 
 	// Create deploy log file
-	logFile := fmt.Sprintf("deploy/logs/%s.deploy.log", time.Now().Format("2006-01-02 15:04:05"))
+	logFile := fmt.Sprintf(".wdtk/logs/%s.deploy.log", time.Now().Format("2006-01-02 15:04:05"))
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
@@ -72,20 +74,73 @@ func runDeploy(ctx *cli.Context) error {
 	deployAll := ctx.Args().Get(1) == "all"
 
 	for _, service := range cfg.Services {
-		deploy := deployAll || array.IsElementInArray(servicesToDeploy, service.Name)
+		shouldDeploy := deployAll || array.IsElementInArray(servicesToDeploy, service.Name)
 
-		filledDeployment, err := cfg.GetFilledDeployment(service, ctx.Args().Get(0))
+		filledDeployment, err := cfg.GetFilledServiceDeployment(service, ctx.Args().Get(0))
 		if err != nil {
 			return err
 		}
 
-		if deploy {
-			err := deployService(cfg, service, filledDeployment, logFile)
+		if shouldDeploy {
+			name := service.Name
+			println(util.SPACING_1 + "- [ Service] " + name)
+
+			rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", name, -1)
+			serviceConfigPath := fmt.Sprintf(".wdtk/generated/%s_ServiceConfig_%s.json", service.Name, deployment.Name)
+
+			data := deploy.DeployData{
+				InputDir:       ".wdtk/bin/services/",
+				ConfigFile:     serviceConfigPath,
+				ConfigFileName: "ServiceConfig.json",
+				OutputDir:      rootDeploymentDirectory,
+				ServiceName:    service.Name,
+				DeploymentName: deployment.Name,
+				Directory:      true,
+			}
+
+			err := deploySingle(data, filledDeployment)
 			if err != nil {
 				log.Println(err)
 				numFailed++
 			} else {
 				numDeployed++
+			}
+		}
+	}
+
+	if cfg.Frontend != nil {
+		for _, frontend := range cfg.Frontend.Platforms {
+			shouldDeploy := deployAll || array.IsElementInArray(servicesToDeploy, frontend.Type)
+
+			filledDeployment, err := cfg.GetFilledFrontendDeployment(frontend, ctx.Args().Get(0))
+			if err != nil {
+				return err
+			}
+
+			if shouldDeploy {
+				name := cases.Title(language.English, cases.Compact).String(frontend.Type)
+				println(util.SPACING_1 + "- [Frontend] " + name)
+
+				rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", name, -1)
+				serviceConfigPath := fmt.Sprintf(".wdtk/generated/%s_FrontendConfig_%s.json", frontend.Type, deployment.Name)
+
+				data := deploy.DeployData{
+					InputDir:       ".wdtk/bin/frontends/",
+					ConfigFile:     serviceConfigPath,
+					ConfigFileName: "FrontendConfig.json",
+					OutputDir:      rootDeploymentDirectory,
+					ServiceName:    frontend.Type + "/",
+					DeploymentName: deployment.Name,
+					Directory:      true,
+				}
+
+				err := deploySingle(data, filledDeployment)
+				if err != nil {
+					log.Println(err)
+					numFailed++
+				} else {
+					numDeployed++
+				}
 			}
 		}
 	}
@@ -115,17 +170,7 @@ func getDeployment(cfg *types.WDTKConfig, target string) *types.DeploymentConfig
 	return nil
 }
 
-func deployService(cfg types.WDTKConfig, service types.ServiceDescriptionConfig, deployment types.DeploymentConfig, logFile string) error {
-	println(util.SPACING_1 + "- " + service.Name)
-
-	rootDeploymentDirectory := strings.Replace(*deployment.DeployDir, "%serviceName", service.Name, -1)
-
-	data := deploy.DeployData{
-		OutputDir:      rootDeploymentDirectory,
-		ServiceName:    service.Name,
-		DeploymentName: deployment.Name,
-	}
-
+func deploySingle(data deploy.DeployData, deployment types.DeploymentConfig) error {
 	// Check if this is a local deployment or remote
 	if *deployment.IP == "127.0.0.1" || *deployment.IP == "localhost" {
 		return deploy.DeployLocal(data)
