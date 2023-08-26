@@ -19,7 +19,7 @@ func DeployLocal(data DeployData) error {
 	}
 
 	// Copy service config
-	err := file.CopyFile(data.ConfigFile, data.OutputDir+"/"+data.ConfigFileName)
+	err := file.CopyFile(data.ConfigFile, data.OutputDir+"/assets/"+data.ConfigFileName)
 	if err != nil {
 		return err
 	}
