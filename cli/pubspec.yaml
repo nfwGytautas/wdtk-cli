@@ -1,0 +1,16 @@
+name: wdtk_cli
+description: A CLI for the development toolkit of WDTK
+version: 0.0.0
+repository: https://github.com/nfwGytautas/wdtk-cli
+
+environment:
+  sdk: ^3.0.5
+
+# Add regular dependencies here.
+dependencies:
+  path: ^1.8.0
+  yaml: ^3.1.2
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.21.0

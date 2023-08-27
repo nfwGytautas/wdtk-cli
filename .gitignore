@@ -2,14 +2,7 @@
 documentation/*.drawio.bkp
 documentation/*.drawio.dtmp
 
-cli/wdtk
-
-test/
-
-# Ignore everything except the utility script and template dockerfile
-bin
-
 # Remove MacOs specific files
 .DS_Store
 
-.docker/
+cli-old/
