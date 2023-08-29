@@ -35,6 +35,20 @@ class PackageAlias implements Alias {
   }
 }
 
+/// Alias for processing __PACKAGE_ROOT__
+class PackageRootAlias implements Alias {
+  @override
+  String getComputedValue(
+      {Map<String, String>? args, bool forwardRemaining = false}) {
+    return Directory.current.path;
+  }
+
+  @override
+  void _compute(WDTKConfig config) {
+    // Nothing to do
+  }
+}
+
 /// Alias for processing __DEPLOYMENT__
 class DeploymentAlias implements Alias {
   final String deploymentName;
@@ -63,8 +77,12 @@ class ServiceAlias implements Alias {
   String getComputedValue(
       {Map<String, String>? args, bool forwardRemaining = false}) {
     if (config._currentService == null) {
-      Logger.warning("No service currently being processed");
-      return "@@NULL@@";
+      if (config._currentFrontend == null) {
+        Logger.warning("No service currently being processed");
+        return "@@NULL@@";
+      }
+
+      return config._currentFrontend!;
     }
 
     return config._currentService!.name;

@@ -1,5 +1,11 @@
 part of wdtk_config;
 
+/// Class for holding compile language constants
+class CompileLanguage {
+  static final String go = "go";
+  static final String flutter = "flutter";
+}
+
 /// A implementation of a service source that requires compilation
 class CompiledSource implements ServiceSource {
   late final String language;
@@ -10,6 +16,11 @@ class CompiledSource implements ServiceSource {
 
   @override
   String getType() {
-    return "compiled";
+    return ServiceType.local;
+  }
+
+  @override
+  String getPath() {
+    return "services/";
   }
 }

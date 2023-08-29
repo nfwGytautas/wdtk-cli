@@ -1,5 +1,6 @@
 part of wdtk_cli_logging;
 
+/// Possible logger settings
 class LoggerSettings {
   final bool verbose;
 
@@ -9,6 +10,20 @@ class LoggerSettings {
   static LoggerSettings getDefault() {
     return LoggerSettings(verbose: false);
   }
+}
+
+/// Indents for logging
+class Indent {
+  static final String _indentSize = "   ";
+
+  String _indent = "";
+
+  @override
+  String toString() {
+    return _indent;
+  }
+
+  Indent({int? indentSize}) : _indent = _indentSize * (indentSize ?? 1);
 }
 
 /// Logger class
@@ -21,10 +36,15 @@ class Logger {
   }
 
   /// Message only shown when verbose mode is active
-  static void verbose(String message) {
+  static void verbose(String message, {Indent? indent}) {
     if (_settings.verbose) {
-      print("[Verbose] $message");
+      print("[Verbose] ${indent ?? ""}$message");
     }
+  }
+
+  /// Info message
+  static void info(String message) {
+    print(message);
   }
 
   /// Print a warning message

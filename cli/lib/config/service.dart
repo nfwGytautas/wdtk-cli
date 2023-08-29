@@ -2,12 +2,10 @@ part of wdtk_config;
 
 /// WDTK predefined options for services
 class ServiceOptions {
-  late final bool? gateway;
+  late final String? gateway;
 
   ServiceOptions(Map data) {
-    if (data.containsKey("gateway")) {
-      gateway = data["gateway"];
-    }
+    gateway = data["gateway"] ? data["gateway"].toString() : "false";
   }
 }
 
@@ -24,10 +22,25 @@ class Service {
 
     if (data.containsKey("options")) {
       options = ServiceOptions(data["options"]);
+    } else {
+      options = null;
     }
 
-    if (data.containsKey("config")) {
-      config = data["config"];
-    }
+    config = data["config"];
+  }
+
+  /// Returns the path to the service (from root)
+  String getPath() {
+    return Path.join(source.getPath(), "$name/");
+  }
+
+  /// Returns the path to the service output directory (from root)
+  String getOutputDir() {
+    return Path.absolute(".wdtk/bin/services/$name/");
+  }
+
+  /// Get the path to the config file of the service
+  String getConfigFile(String deployment) {
+    return Path.join(".wdtk/generated/configs/$deployment/$name.json");
   }
 }

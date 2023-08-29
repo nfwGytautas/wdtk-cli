@@ -12,6 +12,18 @@ class WDTKConfig {
 
   Deployment? _selectedDeployment;
   Service? _currentService;
+  String? _currentFrontend;
+
+  /// Get all services with the specified type
+  List<Service> getServicesOfType(String type) {
+    List<Service> result = List.empty(growable: true);
+    for (var service in services.values) {
+      if (service.source.getType() == type) {
+        result.add(service);
+      }
+    }
+    return result;
+  }
 
   /// Compute the in string and replace all aliases where possible
   String getStringValue(String input) {
@@ -66,10 +78,13 @@ class WDTKConfig {
 
   /// Select the current deployment
   void selectDeployment(String name) {
+    // TODO: Refactor to be able to use without selecting
     if (!deployments.containsKey(name)) {
       print("Unknown deployment $name");
       return;
     }
+
+    Logger.verbose("Selecting deployment $name");
 
     aliases!["__DEPLOYMENT__"] = DeploymentAlias(deploymentName: name);
     aliases!["__SERVICE__"] = ServiceAlias(config: this);
@@ -81,12 +96,29 @@ class WDTKConfig {
 
   /// Select a service for processing
   void selectService(String name) {
+    // TODO: Refactor to be able to use without selecting
     if (!services.containsKey(name)) {
       print("Unknown service $name");
       return;
     }
 
+    Logger.verbose("Selecting service $name");
+
     _currentService = services[name];
+    _currentFrontend = null;
+  }
+
+  /// Select a frontend entry for processing
+  void selectFrontend(String name) {
+    if (frontend == null) {
+      // Do nothing
+      return;
+    }
+
+    Logger.verbose("Selecting frontend $name");
+
+    _currentService = null;
+    _currentFrontend = name;
   }
 
   /// Computes all aliases
@@ -113,7 +145,6 @@ class WDTKConfig {
       return result;
     }
 
-    print("'wdtk.yaml' doesn't exist");
     return null;
   }
 
@@ -157,5 +188,6 @@ class WDTKConfig {
   void _addDefaultAliases() {
     aliases!["__HOME__"] = HomeAlias();
     aliases!["__PACKAGE__"] = PackageAlias(packageName: name);
+    aliases!["__PACKAGE_ROOT__"] = PackageRootAlias();
   }
 }

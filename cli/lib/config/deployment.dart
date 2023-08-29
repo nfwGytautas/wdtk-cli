@@ -5,31 +5,15 @@ class DeploymentEntry {
   late final String? ip;
   late final String? apiKey;
   late final String? deploymentDir;
-  late final int? port;
+  late final String? port;
 
-  DeploymentEntry.empty() {
-    ip = null;
-    apiKey = null;
-    deploymentDir = null;
-    port = null;
-  }
+  DeploymentEntry.empty();
 
   DeploymentEntry(Map data) {
-    if (data.containsKey("ip")) {
-      ip = data["ip"];
-    }
-
-    if (data.containsKey("apiKey")) {
-      apiKey = data["apiKey"];
-    }
-
-    if (data.containsKey("dir")) {
-      deploymentDir = data["dir"];
-    }
-
-    if (data.containsKey("port")) {
-      port = data["port"];
-    }
+    ip = data["ip"];
+    apiKey = data["apiKey"];
+    deploymentDir = data["dir"];
+    port = data["port"] != null ? data["port"].toString() : "";
   }
 
   /// Create a new entry where empty fields from entry are filled with ones from defaults

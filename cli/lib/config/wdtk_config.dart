@@ -3,6 +3,7 @@ library wdtk_config;
 import 'dart:io';
 import 'package:wdtk_cli/logging/logging.dart';
 import 'package:yaml/yaml.dart';
+import 'package:path/path.dart' as Path;
 
 part 'regex_utility.dart';
 

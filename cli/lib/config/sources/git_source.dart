@@ -1,17 +1,24 @@
 part of wdtk_config;
 
 /// A implementation of service source that is received from git repository
-class GitSource implements ServiceSource {
+class GitSource extends CompiledSource {
   late final String remote;
-  late final String language;
+  late final String branch;
 
-  GitSource(Map data) {
+  GitSource(Map data) : super(data) {
     remote = data["remote"];
-    language = data["language"];
+    branch = data["branch"] ?? "master";
   }
 
   @override
   String getType() {
-    return "git";
+    return ServiceType.git;
+  }
+
+  @override
+  String getPath() {
+    final parts = remote.split("/");
+    final remoteName = parts.sublist(0, 3).join("/");
+    return Path.join(".wdtk/remotes/", remoteName, branch);
   }
 }

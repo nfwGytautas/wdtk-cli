@@ -1,27 +1,30 @@
-import 'package:wdtk_cli/config/wdtk_config.dart';
-import 'package:wdtk_cli/logging/logging.dart';
+import 'dart:io';
+
+import 'package:args/command_runner.dart';
+import 'package:wdtk_cli/commands/commands.dart';
 
 void main(List<String> arguments) {
-  Logger.setSettings(LoggerSettings(verbose: true));
+  // TODO: Automatically get it from pubspec.yaml
+  final version = "0.0.0";
 
-  WDTKConfig? config = WDTKConfig.load();
+  var runner = CommandRunner("wdtk", "Webdev-Toolkit (v$version)");
 
-  if (config == null) {
-    print("Failed to load config");
-    return;
-  }
+  runner.addCommand(InitCommand());
+  runner.addCommand(ScaffoldCommand());
+  runner.addCommand(BuildCommand());
+  runner.addCommand(DeployCommand());
 
-  config.selectDeployment("dev");
-  print(config
-      .getAlias("::databaseString")!
-      .getComputedValue(args: {"database": "auth"}));
+  runner.argParser.addFlag('verbose',
+      negatable: false, abbr: "v", help: "Enable verbose logging");
 
-  print(config.getAliasValue("\${::databaseString, database: auth}"));
+  runner.run(arguments).catchError((error) {
+    if (error is UsageException) {
+      print(error);
+      exit(64);
+    }
 
-  print(config.getStringValue(
-      "\${__HOME__}/\${__PACKAGE__}/\${__DEPLOYMENT__}/\${__SERVICE__}"));
+    throw error;
+  });
 
-  print(config.getStringValue("Non alias string"));
-
-  print(config.getStringValue("\${__DEPLOYMENT_DIR__, service: Web}"));
+  return;
 }

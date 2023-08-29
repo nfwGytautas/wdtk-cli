@@ -5,4 +5,4 @@ documentation/*.drawio.dtmp
 # Remove MacOs specific files
 .DS_Store
 
-cli-old/
+cli/bin/test/
