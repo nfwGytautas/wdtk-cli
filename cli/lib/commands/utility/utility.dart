@@ -4,7 +4,7 @@ part of wdtk_commands;
 class Utility {
   /// Copy directory
   static Future<void> copyDirectory(Directory source, Directory destination) async {
-    destination.create(recursive: true);
+    destination.createSync(recursive: true);
 
     source
         .list(recursive: false)
