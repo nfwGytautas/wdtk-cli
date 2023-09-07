@@ -6,7 +6,7 @@ class ScaffoldCommand extends CliCommand {
   final name = "scaffold";
 
   @override
-  final description = "Initialize the basic folder structure for wdtk";
+  final description = "Pull remote services, create flutter projects, update configuration files, etc.";
 
   final List<ScaffoldAction> _actions = [
     CreateLocalServices(),

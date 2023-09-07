@@ -72,7 +72,7 @@ class DeployCommand extends CliCommand {
             inputPath: entry.getOutputDir(),
             outDirectory:
                 config!.getStringValue(deploymentEntry.deploymentDir!),
-            configFileOverride: "assets/assets/"
+            configFileOverride: "assets/"
             );
 
         futures.add(deployer.deploy(args));

@@ -158,7 +158,7 @@ class WDTKConfig {
     aliases = <String, Alias>{};
     if (data.containsKey("aliases")) {
       for (var entry in data["aliases"].entries) {
-        aliases![entry.key] = UserAlias(name: entry.key, value: entry.value);
+        aliases![entry.key] = UserAlias(name: entry.key, value: entry.value.toString());
       }
     }
 

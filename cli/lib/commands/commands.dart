@@ -11,6 +11,7 @@ import 'package:wdtk_cli/templates/templates.dart';
 
 part 'cli_command.dart';
 
+
 part 'build/build_command.dart';
 part 'build/build_result.dart';
 part 'build/source_builder.dart';
@@ -18,13 +19,15 @@ part 'build/source_builder.dart';
 part 'build/builders/go_builder.dart';
 part 'build/builders/flutter_builder.dart';
 
-part 'init/init_command.dart';
-
 part 'deploy/deploy_command.dart';
 part 'deploy/deploy_result.dart';
 part 'deploy/deployer.dart';
 
 part 'deploy/deployers/local_deployer.dart';
+
+part 'init/init_command.dart';
+
+part 'run/run_command.dart';
 
 part 'scaffold/scaffold_command.dart';
 part 'scaffold/scaffold_action.dart';

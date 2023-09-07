@@ -13,6 +13,7 @@ void main(List<String> arguments) {
   runner.addCommand(ScaffoldCommand());
   runner.addCommand(BuildCommand());
   runner.addCommand(DeployCommand());
+  runner.addCommand(RunCommand());
 
   runner.argParser.addFlag('verbose',
       negatable: false, abbr: "v", help: "Enable verbose logging");
