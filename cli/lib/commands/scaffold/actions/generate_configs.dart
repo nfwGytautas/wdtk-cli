@@ -53,8 +53,8 @@ class GenerateConfigs implements ScaffoldAction {
 
     var locatorTable = [];
 
-    final gatewayIp = config.getStringValue(
-            "${gatewayDeployment.ip}:${gatewayDeployment.port}");
+    final gatewayIp = config
+        .getStringValue("${gatewayDeployment.ip}:${gatewayDeployment.port}");
 
     for (var service in config.services.values) {
       // Skip gateway
@@ -74,7 +74,7 @@ class GenerateConfigs implements ScaffoldAction {
       // Standard settings
       final runIp = config
           .getStringValue("${serviceDeployment.ip}:${serviceDeployment.port}");
-      var configMap = {
+      var configMap = <String,dynamic>{
         "runAddress": runIp,
         "gatewayIp": gatewayIp,
         "apiKey": config.getStringValue(serviceDeployment.apiKey!)
@@ -83,7 +83,11 @@ class GenerateConfigs implements ScaffoldAction {
       // User config map
       if (service.config != null) {
         service.config!.forEach((key, value) {
-          configMap[key] = config.getStringValue(value);
+          if (value is String) {
+            configMap[key] = config.getStringValue(value.toString());
+          } else {
+            configMap[key] = value;
+          }
         });
       }
 
@@ -96,13 +100,11 @@ class GenerateConfigs implements ScaffoldAction {
 
     if (config.frontend != null) {
       for (var entry in config.frontend!.platforms) {
-        final outPath = Path.join(".wdtk/generated/configs/", deployment.name,
-            "${entry.type}.json");
+        final outPath = Path.join(
+            ".wdtk/generated/configs/", deployment.name, "${entry.type}.json");
 
         var file = await File(outPath).create(recursive: true);
-        file.writeAsString(encoder.convert({
-          "gatewayIp": gatewayIp
-        }));
+        file.writeAsString(encoder.convert({"gatewayIp": gatewayIp}));
       }
     }
 
