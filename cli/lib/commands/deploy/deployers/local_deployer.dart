@@ -6,11 +6,32 @@ class LocalDeployer implements Deployer {
   Future<DeployResult> deploy(DeploySettings args) async {
     Logger.verbose("Local deploy for: ${args.name} to ${args.outDirectory}");
 
-    await Directory(args.outDirectory).create(recursive: true);
+    try {
+      await Directory(args.outDirectory).create(recursive: true);
 
-    await Utility.copyDirectory(
-        Directory(args.inputPath), Directory(args.outDirectory));
-    await File(args.configFile).copy(Path.join(args.outDirectory, "WdtkConfig.json"));
+      Utility.copyDirectory(
+          Directory(args.inputPath), Directory(args.outDirectory));
+
+      if (args.configFileOverride == null) {
+        await File(args.configFile)
+            .copy(Path.join(args.outDirectory, "WdtkConfig.json"));
+      } else {
+        Logger.verbose(
+            "Config file deploy override to '${args.configFileOverride!}'");
+
+        await Directory(Path.join(args.outDirectory, args.configFileOverride!))
+            .create(recursive: true);
+
+        print(Path.join(
+            args.outDirectory, args.configFileOverride!, "WdtkConfig.json"));
+
+        File(args.configFile).copySync(Path.join(
+            args.outDirectory, args.configFileOverride!, "WdtkConfig.json"));
+      }
+    } catch (ex) {
+      Logger.error("Failed to deploy ${ex.toString()}");
+      return DeployResult(service: args.name, success: false);
+    }
 
     return DeployResult(service: args.name, success: true);
   }

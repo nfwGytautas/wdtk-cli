@@ -71,7 +71,9 @@ class DeployCommand extends CliCommand {
             configFile: entry.getConfigFile(deployment.name),
             inputPath: entry.getOutputDir(),
             outDirectory:
-                config!.getStringValue(deploymentEntry.deploymentDir!));
+                config!.getStringValue(deploymentEntry.deploymentDir!),
+            configFileOverride: "assets/assets/"
+            );
 
         futures.add(deployer.deploy(args));
       }

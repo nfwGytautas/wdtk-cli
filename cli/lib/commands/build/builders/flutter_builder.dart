@@ -13,7 +13,7 @@ class FlutterBuilder extends SourceBuilder {
     }
 
     final destination = Directory(".wdtk/bin/frontend/${platform.type}/");
-    await Utility.copyDirectory(
+    Utility.copyDirectory(
         Directory("frontend/_flutter/build/${platform.type}/"), destination);
 
     return BuildResult(service: platform.type, success: true);

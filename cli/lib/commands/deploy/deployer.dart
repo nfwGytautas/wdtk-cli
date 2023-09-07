@@ -7,8 +7,15 @@ class DeploySettings {
   final String inputPath;
   final String outDirectory;
 
+  // Optional override for putting config files somewhere other than root outDirectory
+  final String? configFileOverride;
+
   DeploySettings(
-      {required this.name, required this.configFile, required this.inputPath, required this.outDirectory});
+      {required this.name,
+      required this.configFile,
+      required this.inputPath,
+      required this.outDirectory,
+      this.configFileOverride});
 }
 
 /// Base class for possible deployment strategies
