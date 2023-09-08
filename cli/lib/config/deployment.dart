@@ -6,6 +6,7 @@ class DeploymentEntry {
   late final String? apiKey;
   late final String? deploymentDir;
   late final String? port;
+  late final String? sshUser;
 
   DeploymentEntry.empty();
 
@@ -13,7 +14,8 @@ class DeploymentEntry {
     ip = data["ip"];
     apiKey = data["apiKey"];
     deploymentDir = data["dir"];
-    port = data["port"] != null ? data["port"].toString() : "";
+    port = data["port"]?.toString();
+    sshUser = data["ssh-user"]?.toString();
   }
 
   /// Create a new entry where empty fields from entry are filled with ones from defaults
@@ -24,6 +26,7 @@ class DeploymentEntry {
     result.apiKey = entry.apiKey ?? defaults.apiKey;
     result.deploymentDir = entry.deploymentDir ?? defaults.deploymentDir;
     result.port = entry.port ?? defaults.port;
+    result.sshUser = entry.sshUser ?? defaults.sshUser;
 
     return result;
   }

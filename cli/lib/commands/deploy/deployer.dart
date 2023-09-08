@@ -10,12 +10,15 @@ class DeploySettings {
   // Optional override for putting config files somewhere other than root outDirectory
   final String? configFileOverride;
 
+  final String? remoteTarget;
+
   DeploySettings(
       {required this.name,
       required this.configFile,
       required this.inputPath,
       required this.outDirectory,
-      this.configFileOverride});
+      this.configFileOverride,
+      this.remoteTarget});
 }
 
 /// Base class for possible deployment strategies
@@ -30,8 +33,6 @@ abstract class Deployer {
     }
 
     // Remote
-    // TODO: Implement
-
-    return null;
+    return RsyncDeployer();
   }
 }

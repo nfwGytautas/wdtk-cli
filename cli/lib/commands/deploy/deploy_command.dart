@@ -37,6 +37,7 @@ class DeployCommand extends CliCommand {
     for (var service in config!.services.values) {
       config!.selectService(service.name);
       final deploymentEntry = deployment.getServiceDeployment(service.name);
+      final remoteTarget = deploymentEntry.sshUser == null ? null : "${deploymentEntry.sshUser}@${deploymentEntry.ip}";
       final deployer = Deployer.fromIp(deploymentEntry.ip!);
 
       if (deployer == null) {
@@ -45,11 +46,14 @@ class DeployCommand extends CliCommand {
         return;
       }
 
+
       final args = DeploySettings(
-          name: service.name,
-          configFile: service.getConfigFile(deployment.name),
-          inputPath: service.getOutputDir(),
-          outDirectory: config!.getStringValue(deploymentEntry.deploymentDir!));
+        name: service.name,
+        configFile: service.getConfigFile(deployment.name),
+        inputPath: service.getOutputDir(),
+        outDirectory: config!.getStringValue(deploymentEntry.deploymentDir!),
+        remoteTarget: remoteTarget
+      );
 
       futures.add(deployer.deploy(args));
     }
@@ -58,6 +62,7 @@ class DeployCommand extends CliCommand {
       for (var entry in config!.frontend!.platforms) {
         config!.selectFrontend(entry.type);
         final deploymentEntry = deployment.getServiceDeployment(entry.type);
+        final remoteTarget = deploymentEntry.sshUser == null ? null : "${deploymentEntry.sshUser}@${deploymentEntry.ip}";
         final deployer = Deployer.fromIp(deploymentEntry.ip!);
 
         if (deployer == null) {
@@ -72,8 +77,9 @@ class DeployCommand extends CliCommand {
             inputPath: entry.getOutputDir(),
             outDirectory:
                 config!.getStringValue(deploymentEntry.deploymentDir!),
-            configFileOverride: "assets/"
-            );
+            configFileOverride: "assets/",
+            remoteTarget: remoteTarget
+          );
 
         futures.add(deployer.deploy(args));
       }

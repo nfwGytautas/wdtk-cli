@@ -11,7 +11,6 @@ import 'package:wdtk_cli/templates/templates.dart';
 
 part 'cli_command.dart';
 
-
 part 'build/build_command.dart';
 part 'build/build_result.dart';
 part 'build/source_builder.dart';
@@ -24,6 +23,7 @@ part 'deploy/deploy_result.dart';
 part 'deploy/deployer.dart';
 
 part 'deploy/deployers/local_deployer.dart';
+part 'deploy/deployers/rsync_deployer.dart';
 
 part 'init/init_command.dart';
 

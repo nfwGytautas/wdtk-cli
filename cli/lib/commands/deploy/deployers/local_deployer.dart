@@ -22,9 +22,6 @@ class LocalDeployer implements Deployer {
         await Directory(Path.join(args.outDirectory, args.configFileOverride!))
             .create(recursive: true);
 
-        print(Path.join(
-            args.outDirectory, args.configFileOverride!, "WdtkConfig.json"));
-
         File(args.configFile).copySync(Path.join(
             args.outDirectory, args.configFileOverride!, "WdtkConfig.json"));
       }
