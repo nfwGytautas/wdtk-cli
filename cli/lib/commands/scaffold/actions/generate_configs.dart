@@ -73,9 +73,9 @@ class GenerateConfigs implements ScaffoldAction {
 
       // Standard settings
       final runIp = config
-          .getStringValue("${serviceDeployment.ip}:${serviceDeployment.port}");
+          .getStringValue("${serviceDeployment.port}");
       var configMap = <String,dynamic>{
-        "runAddress": runIp,
+        "runAddress": "0.0.0.0:$runIp",
         "gatewayIp": gatewayIp,
         "apiKey": config.getStringValue(serviceDeployment.apiKey!)
       };
@@ -93,7 +93,7 @@ class GenerateConfigs implements ScaffoldAction {
 
       Logger.verbose("Writing $configMap", indent: Indent());
 
-      locatorTable.add({"service": service.name, "ip": runIp});
+      locatorTable.add({"service": service.name, "ip": "${serviceDeployment.ip}:$runIp"});
 
       file.writeAsString(encoder.convert(configMap));
     }
@@ -112,10 +112,21 @@ class GenerateConfigs implements ScaffoldAction {
     var gatewayConfig = <String, dynamic>{
       "apiKey": config.getStringValue(gatewayDeployment.apiKey!),
       "runAddress": config
-          .getStringValue("${gatewayDeployment.ip}:${gatewayDeployment.port}"),
+          .getStringValue("0.0.0.0:${gatewayDeployment.port}"),
     };
 
     gatewayConfig["locatorTable"] = locatorTable;
+
+    // User config map
+    if (gatewayService.config != null) {
+      gatewayService.config!.forEach((key, value) {
+        if (value is String) {
+          gatewayConfig[key] = config.getStringValue(value.toString());
+        } else {
+          gatewayConfig[key] = value;
+        }
+      });
+    }
 
     Logger.verbose("Writing $gatewayConfig", indent: Indent());
 
