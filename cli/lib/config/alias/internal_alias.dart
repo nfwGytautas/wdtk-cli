@@ -126,3 +126,25 @@ class DeploymentDirAlias implements Alias {
     // Nothing to do
   }
 }
+
+/// Alias for processing __USERNAME__
+class UsernameAlias implements Alias {
+  @override
+  String getComputedValue(
+      {Map<String, String>? args, bool forwardRemaining = false}) {
+    switch (Platform.operatingSystem) {
+      case 'linux':
+      case 'macos':
+        return Platform.environment['USER']!;
+      case 'windows':
+        return Platform.environment['USERNAME']!;
+      default:
+        throw "CLI doesn't recognize the current operating system";
+    }
+  }
+
+  @override
+  void _compute(WDTKConfig config) {
+    // Nothing to do
+  }
+}

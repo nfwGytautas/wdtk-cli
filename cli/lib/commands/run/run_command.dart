@@ -9,6 +9,10 @@ class RunCommand extends CliCommand {
   final description = "Run the services [Local deployment only]";
   RunCommand();
 
+  final List<ServiceRunner> _localServices = List.empty(growable: true);
+  final List<ServiceRunner> _remoteServices = List.empty(growable: true);
+  bool _mutex = false;
+
   @override
   void run() async {
     super.run();
@@ -20,38 +24,129 @@ class RunCommand extends CliCommand {
       return;
     }
 
-    List<Future<Process>> futures = List.empty(growable: true);
+    await _loadLists(config!);
 
-    for (var service in config!.services.values) {
-      futures.add(_executeService(service));
+    _runLocalServices();
+    _runRemoteServices();
+
+    _watchConsole();
+    _watchConfig();
+  }
+
+  /// Load lists from wdtk config
+  Future<void> _loadLists(WDTKConfig config) async {
+    for (final service in _localServices) {
+      await service.stop();
     }
 
-    var processes = await Future.wait(futures);
+    for (final service in _remoteServices) {
+      await service.stop();
+    }
 
-    for (var process in processes) {
-      await process.exitCode;
+    _localServices.clear();
+    _remoteServices.clear();
+
+    for (final service in config.services.values) {
+      if (service.source.getType() == ServiceType.local) {
+        _localServices.add(ServiceRunner(service: service, watchChanges: true));
+      } else {
+        _remoteServices.add(ServiceRunner(service: service));
+      }
     }
   }
 
-  /// Execute a single service
-  Future<Process> _executeService(Service service) async {
-    Logger.info("Starting ${service.name}");
+  /// Create a watcher for wdtk.yaml
+  void _watchConfig() {
+    // Start watching wdtk.yaml
+    var configWatcher =
+        FileWatcher(Path.join(Directory.current.path, "wdtk.yaml"));
+    configWatcher.events.listen(_onConfigChange);
+  }
 
-    var p = await Process.start("./${service.name}", [],
-        workingDirectory: "dev/${service.name}/", runInShell: true);
+  /// Watch console for 'R' press to reload
+  void _watchConsole() async {
+    stdin.lineMode = false;
+    stdin.echoMode = false;
 
-
-    // Logging information
-    p.stdout.transform(utf8.decoder).forEach((element) {
-      for (final line in element.split("\n")) {
-        if (line.isEmpty || line == "\n") {
-          continue;
+    await for (var inputList in stdin) {
+      final input = Utf8Decoder().convert(inputList);
+      print(input);
+      if (input == "r") {
+        for (int i = 0; i < stdout.terminalLines; i++) {
+          stdout.writeln();
         }
 
-        print("[${service.name.padLeft(20, " ")}] $line");
-      }
-    });
+        final message = "RELOAD";
+        final spacing = " " * ((stdout.terminalColumns / 2).floor() - message.length);
 
-    return p;
+        stdout.writeln("=" * stdout.terminalColumns);
+        stdout.writeln("$spacing$message");
+        stdout.writeln("=" * stdout.terminalColumns);
+
+        _onConfigChange(null);
+      }
+    }
+  }
+
+  /// Called when a config is changed
+  void _onConfigChange(WatchEvent? event) async {
+    while (_mutex) {}
+
+    _mutex = true;
+
+    print("Config changed running scaffold, build and deploy");
+
+    WDTKConfig? newConfig = WDTKConfig.load();
+    if (newConfig == null) {
+      Logger.error("Failed to load new config fix errors");
+      return;
+    }
+
+    await _loadLists(newConfig);
+
+    // Run scaffold
+    bool scaffold = await Scaffold.run(newConfig);
+    if (!scaffold) {
+      Logger.error(
+          "Scaffold command failed, check that wdtk.yaml config is without errors, no services reloaded");
+      return;
+    }
+
+    // Build services
+    bool build = await Build.run(newConfig, buildFrontend: false);
+    if (!build) {
+      Logger.error(
+          "Build command failed, correct errors, no services reloaded");
+      return;
+    }
+
+    // Deploy to dev
+    bool deploy = await Deploy.run(newConfig, "dev", deployFrontend: false);
+    if (!deploy) {
+      Logger.error(
+          "Deploy command failed, correct errors, no services reloaded");
+      return;
+    }
+
+    _runLocalServices();
+    _runRemoteServices();
+
+    _mutex = false;
+  }
+
+  /// Run remote services
+  void _runRemoteServices() {
+    // Run all services
+    for (final service in _remoteServices) {
+      service.run();
+    }
+  }
+
+  /// Run local services
+  void _runLocalServices() async {
+    // Run all services
+    for (final service in _localServices) {
+      service.run();
+    }
   }
 }

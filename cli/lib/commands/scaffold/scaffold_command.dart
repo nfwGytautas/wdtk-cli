@@ -6,15 +6,8 @@ class ScaffoldCommand extends CliCommand {
   final name = "scaffold";
 
   @override
-  final description = "Pull remote services, create flutter projects, update configuration files, etc.";
-
-  final List<ScaffoldAction> _actions = [
-    CreateLocalServices(),
-    PullGitServices(),
-    GenerateConfigs(),
-    WriteGoWork(),
-    CreateFlutterProject()
-  ];
+  final description =
+      "Pull remote services, create flutter projects, update configuration files, etc.";
 
   ScaffoldCommand();
 
@@ -29,17 +22,6 @@ class ScaffoldCommand extends CliCommand {
       return;
     }
 
-    List<Future<ActionResult>> futures = List.empty(growable: true);
-
-    for (var action in _actions) {
-      futures.add(action.execute(config!));
-    }
-
-    final results = await Future.wait(futures);
-
-    Logger.verbose("Scaffold summary");
-    for (int i = 0; i < results.length; i++) {
-      Logger.verbose("${_actions[i].name} : ${results[i]}", indent: Indent());
-    }
+    await Scaffold.run(config!);
   }
 }

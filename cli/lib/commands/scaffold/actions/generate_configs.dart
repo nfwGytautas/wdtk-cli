@@ -9,7 +9,7 @@ class GenerateConfigs implements ScaffoldAction {
 
   @override
   Future<ActionResult> execute(WDTKConfig config) async {
-    ActionResult result = ActionResult.nothingToDo;
+    ActionResult result = ActionResult.success;
 
     Service? gatewayService;
 

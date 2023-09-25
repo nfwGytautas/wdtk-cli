@@ -158,7 +158,8 @@ class WDTKConfig {
     aliases = <String, Alias>{};
     if (data.containsKey("aliases")) {
       for (var entry in data["aliases"].entries) {
-        aliases![entry.key] = UserAlias(name: entry.key, value: entry.value.toString());
+        aliases![entry.key] =
+            UserAlias(name: entry.key, value: entry.value.toString());
       }
     }
 
@@ -189,5 +190,6 @@ class WDTKConfig {
     aliases!["__HOME__"] = HomeAlias();
     aliases!["__PACKAGE__"] = PackageAlias(packageName: name);
     aliases!["__PACKAGE_ROOT__"] = PackageRootAlias();
+    aliases!["__USERNAME__"] = UsernameAlias();
   }
 }
