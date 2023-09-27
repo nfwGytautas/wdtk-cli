@@ -32,13 +32,11 @@ class ServiceRunner {
 
     // Logging information
     _process!.stdout.transform(utf8.decoder).forEach((element) {
-      for (final line in element.split("\n")) {
-        if (line.isEmpty || line == "\n") {
-          continue;
-        }
+      _handleOutput(element);
+    });
 
-        print("[${service.name.padLeft(20, " ")}] $line");
-      }
+    _process!.stderr.transform(utf8.decoder).forEach((element) {
+      _handleOutput(element, error: true);
     });
 
     _localMutex = false;
@@ -68,7 +66,24 @@ class ServiceRunner {
 
   /// Called when a service is changed
   void _onModified(WatchEvent? event) {
-    print("Service ${service.name} modified");
+    Logger.info("Service ${service.name} modified");
     run();
+  }
+
+  /// Handle output from stdin or stderr
+  void _handleOutput(String output, {bool error = false}) {
+    for (final line in output.split("\n")) {
+      if (line.isEmpty || line == "\n") {
+        continue;
+      }
+
+      final message = "[${service.name.padLeft(20, " ")}] $line";
+
+      if (error) {
+        Logger.error(message);
+      } else {
+        Logger.info(message);
+      }
+    }
   }
 }

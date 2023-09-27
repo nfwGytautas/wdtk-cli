@@ -49,11 +49,11 @@ class Logger {
 
   /// Print a warning message
   static void warning(String message) {
-    print("[Warning] $message");
+    print("\x1B[33m$message\x1B[0m");
   }
 
   /// Print a error message
   static void error(String message) {
-    print("[Error] $message");
+    print("\x1B[31m$message\x1B[0m");
   }
 }

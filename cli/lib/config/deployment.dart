@@ -50,7 +50,7 @@ class Deployment {
     if (data.containsKey("aliases")) {
       aliases = <String, Alias>{};
       for (var entry in data["aliases"].entries) {
-        aliases![entry.key] = UserAlias(name: entry.key, value: entry.value);
+        aliases![entry.key] = UserAlias(name: entry.key, value: entry.value.toString());
       }
     }
 

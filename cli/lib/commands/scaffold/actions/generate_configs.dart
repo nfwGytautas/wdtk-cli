@@ -84,7 +84,7 @@ class GenerateConfigs implements ScaffoldAction {
       if (service.config != null) {
         service.config!.forEach((key, value) {
           if (value is String) {
-            configMap[key] = config.getStringValue(value.toString());
+            configMap[key] = config.convertToStandard(config.getStringValue(value.toString()));
           } else {
             configMap[key] = value;
           }
@@ -121,7 +121,7 @@ class GenerateConfigs implements ScaffoldAction {
     if (gatewayService.config != null) {
       gatewayService.config!.forEach((key, value) {
         if (value is String) {
-          gatewayConfig[key] = config.getStringValue(value.toString());
+          gatewayConfig[key] = config.convertToStandard(config.getStringValue(value.toString()));
         } else {
           gatewayConfig[key] = value;
         }

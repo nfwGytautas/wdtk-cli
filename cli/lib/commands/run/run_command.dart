@@ -24,13 +24,24 @@ class RunCommand extends CliCommand {
       return;
     }
 
-    await _loadLists(config!);
+    try {
+      await _prepareRun();
 
-    _runLocalServices();
-    _runRemoteServices();
+      _runLocalServices();
+      _runRemoteServices();
 
-    _watchConsole();
-    _watchConfig();
+      _watchConsole();
+      _watchConfig();
+    } catch (ex) {
+      Logger.error("Got a WDTK exception while running. Stopping all services");
+      for (final service in _localServices) {
+        service.stop();
+      }
+
+      for (final service in _remoteServices) {
+        service.stop();
+      }
+    }
   }
 
   /// Load lists from wdtk config
@@ -77,7 +88,8 @@ class RunCommand extends CliCommand {
         }
 
         final message = "RELOAD";
-        final spacing = " " * ((stdout.terminalColumns / 2).floor() - message.length);
+        final spacing =
+            " " * ((stdout.terminalColumns / 2).floor() - message.length);
 
         stdout.writeln("=" * stdout.terminalColumns);
         stdout.writeln("$spacing$message");
@@ -96,6 +108,32 @@ class RunCommand extends CliCommand {
 
     print("Config changed running scaffold, build and deploy");
 
+    await _prepareRun();
+
+    _runLocalServices();
+    _runRemoteServices();
+
+    _mutex = false;
+  }
+
+  /// Run remote services
+  void _runRemoteServices() {
+    // Run all services
+    for (final service in _remoteServices) {
+      service.run();
+    }
+  }
+
+  /// Run local services
+  void _runLocalServices() async {
+    // Run all services
+    for (final service in _localServices) {
+      service.run();
+    }
+  }
+
+  /// Scaffold, Build, Deploy cycle
+  Future<void> _prepareRun() async {
     WDTKConfig? newConfig = WDTKConfig.load();
     if (newConfig == null) {
       Logger.error("Failed to load new config fix errors");
@@ -126,27 +164,6 @@ class RunCommand extends CliCommand {
       Logger.error(
           "Deploy command failed, correct errors, no services reloaded");
       return;
-    }
-
-    _runLocalServices();
-    _runRemoteServices();
-
-    _mutex = false;
-  }
-
-  /// Run remote services
-  void _runRemoteServices() {
-    // Run all services
-    for (final service in _remoteServices) {
-      service.run();
-    }
-  }
-
-  /// Run local services
-  void _runLocalServices() async {
-    // Run all services
-    for (final service in _localServices) {
-      service.run();
     }
   }
 }

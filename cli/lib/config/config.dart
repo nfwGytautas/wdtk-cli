@@ -32,6 +32,21 @@ class WDTKConfig {
     });
   }
 
+  /// Convert string to a standard type
+  dynamic convertToStandard(String input) {
+    final bValue = bool.tryParse(input);
+    if (bValue != null) {
+      return bValue;
+    }
+
+    final nValue = double.tryParse(input);
+    if (nValue != null) {
+      return nValue;
+    }
+
+    return input;
+  }
+
   /// Get an alias value from the specified alias string
   String getAliasValue(String aliasString) {
     if (!aliasString.startsWith("\${")) {
